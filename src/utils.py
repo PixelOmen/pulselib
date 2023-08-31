@@ -16,10 +16,14 @@ def print_transactions(trxlist: list["Transaction"]) -> None:
     print(jstr)
 
 def verify_response(url: str, response: "Response") -> str:
+    if response.status_code == 204:
+        return ""
     if not response.text:
-        print("HTTP Response did not contain a body.")
-        print(f"URL: {url}")
-        exit()
+        msg1 = "HTTP Response did not contain a body."
+        msg2 = f"URL: {url}"
+        msg3 = f"Status Code: {response.status_code}"
+        full_msg = "\n".join([msg1, msg2, msg3])
+        raise LookupError(full_msg)
     return response.text.encode('utf-8').decode('utf-8')
 
 def today() -> str:

@@ -49,7 +49,7 @@ def gen_resultcolumns() -> str:
     })
 
 def gen_listquery_url(query: str, resultcolumns: str) -> str:
-    return f"{CONFIG.TRX_URL}/?query={query}&resultColumns={resultcolumns}"
+    return f"{CONFIG.TRX_QUERY_URL}/?query={query}&resultColumns={resultcolumns}"
 
 def list_query(query: str, resultcolumns: str) -> Any:
     fullurl = gen_listquery_url(query, resultcolumns)
