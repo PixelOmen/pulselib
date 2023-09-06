@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+
+@dataclass
 class Config:
     USERNAME: str = "xytech"
     PASSWORD: str = "Password1"
