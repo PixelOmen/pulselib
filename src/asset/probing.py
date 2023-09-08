@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
@@ -37,7 +38,9 @@ MATRIX_MAP: dict[str, str] = {
     "BT.2020 non-constant": "Rec2020"
 }
 
+
 SPEC_PROBE_MAP_SIMPLE: dict[str, tuple[str, str, str]] = {
+    "container": ("General", "Format", "simple"),
     "color_space": ("Video", "colour_primaries", "simple"),
     "eotf": ("Video", "transfer_characteristics", "simple"),
     "matrix": ("Video", "matrix_coefficients", "simple"),
@@ -49,6 +52,7 @@ SPEC_PROBE_MAP_SIMPLE: dict[str, tuple[str, str, str]] = {
     "video_bitrate": ("Video", "BitRate", "simple"),
     "video_bitdepth": ("Video", "BitDepth", "simple"),
     "video_bitrate_mode": ("Video", "BitRate_Mode", "simple"),
+    "audio_codec": ("Audio", "Format", "simple"),
     "audio_bitrate": ("Audio", "BitRate", "simple"),
     "audio_bitdepth": ("Audio", "BitDepth", "simple"),
     "audio_bitrate_mode": ("Audio", "BitRate_Mode", "simple"),
@@ -56,6 +60,7 @@ SPEC_PROBE_MAP_SIMPLE: dict[str, tuple[str, str, str]] = {
 }
 
 SPEC_PROBE_MAP_COMPLEX: list[str] = [
+    "container",
     "length",
     "resolution",
     "dropframe"
@@ -102,6 +107,8 @@ class SpecInterface:
 
     def _complex(self, method: SpecInfo) -> None:
         match method.spec:
+            case "container":
+                self._container_spec(method)
             case "length":
                 self._length_spec(method)
             case "resolution":
@@ -118,6 +125,11 @@ class SpecInterface:
         if ";" in start_tc:
             return True
         return False
+
+    def _container_spec(self, method: SpecInfo) -> None:
+        method.minfo_value = self.probe.fulljson["General"].get("Format", "")
+        method.mpulse_value = Path(self.probe.filepath).suffix[1:].upper()
+        self._add_found(method)
             
     def _length_spec(self, method: SpecInfo) -> None:
         duration = self.probe.duration()
