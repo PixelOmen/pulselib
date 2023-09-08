@@ -11,11 +11,12 @@ class FieldTypeEnum:
         raise NotImplementedError("FieldTypeEnum cannot be instantiated")
 
 class SimpleFieldMap:
-    def __init__(self, ftype: int, keys: Any, nestedcheckmark: bool=False, enumdict: dict[str, int]=...) -> None:
+    def __init__(self, name: str, ftype: int, keys: Any, nestedcheckmark: bool=False, enumdict: dict[str, int]=...) -> None:
         if 0 > ftype > 4:
             raise ValueError(f"SimpleFieldMap: invalid ftype: {ftype}")
         if ftype == FieldTypeEnum.BUILTIN_ENUM and enumdict is ...:
             raise ValueError(f"SimpleFieldMap: BUILTIN_ENUM requires a enumdict")
+        self.name = name
         self.ftype = ftype
         self.keys = keys
         self.nestedcheckmark = nestedcheckmark
