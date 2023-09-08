@@ -57,6 +57,9 @@ class PhaseEnum:
             if phase.desc.lower() == desc:
                 return phase.code
         return ""
+    
+    def __init__(self) -> None:
+        raise NotImplementedError("PhaseEnum is a static class and cannot be instantiated")
 
 
 PERSONNEL_GROUPS = [

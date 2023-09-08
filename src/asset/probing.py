@@ -7,26 +7,15 @@ if TYPE_CHECKING:
     from mediaprobe import MediaProbe
 
 
-SPEC_FIELD_MAP: dict[str, str] = {
-    "length": "REI_field_21",
-    "resolution": "builtin",
-    "dropframe": "REI_field_23",
-    "color_space": "REI_field_11",
-    "eotf": "REI_field_20",
-    "matrix": "REI_field_18",
-    "chroma_sub": "REI_field_17",
-    "frame_rate": "builtin",
-    "scan_type": "REI_field_12",
-    "video_codec": "builtin",
-    "video_profile": "REI_field_10",
-    "video_bitrate": "REI_field_15",
-    "video_bitdepth": "REI_field_19",
-    "video_bitrate_mode": "REI_field_26",
-    "audio_bitrate": "REI_field_16",
-    "audio_bitdepth": "REI_field_14",
-    "audio_bitrate_mode": "REI_field_25",
-    "audio_samplerate": "REI_field_22"
-}
+@dataclass
+class SpecInfo:
+    spec: str
+    track: str=""
+    field: str=""
+    probetype: str="simple"
+    minfo_value: str=""
+    mpulse_value: str=""
+
 
 COLOR_SPACE_MAP: dict[str, str] = {
     "BT.709": "Rec709",
@@ -47,28 +36,6 @@ MATRIX_MAP: dict[str, str] = {
     "BT.709": "Rec709",
     "BT.2020 non-constant": "Rec2020"
 }
-
-# From Frame Rates table in MetaVault->Setup
-FRAMERATE_ENUM: dict[str, int] = {
-    "23.976": 10,
-    "24": 11,
-    "25": 12,
-    "29.97": 13,
-    "30": 14,
-    "48": 15,
-    "50": 16,
-    "59.94": 17,
-    "60": 18
-}
-
-@dataclass
-class SpecInfo:
-    spec: str
-    track: str=""
-    field: str=""
-    probetype: str="simple"
-    inputvalue: str=""
-    outputvalue: str=""
 
 SPEC_PROBE_MAP_SIMPLE: dict[str, tuple[str, str, str]] = {
     "color_space": ("Video", "colour_primaries", "simple"),
@@ -96,7 +63,6 @@ SPEC_PROBE_MAP_COMPLEX: list[str] = [
 
 
 # "error": "A matching value could not be found for the custom dropdown field REI_field_19; Value: 42 bit.\r\n"
-
 class SpecInterface:
     def __init__(self, probe: "MediaProbe"):
         self.probe = probe
@@ -128,7 +94,7 @@ class SpecInterface:
             if track["@type"] == method.track:
                 value = track.get(method.field)
                 if value:
-                    method.inputvalue = value
+                    method.minfo_value = value
                     self._add_found(method)
                 else:
                     self._add_notfound(method)
@@ -159,18 +125,18 @@ class SpecInterface:
             self._add_notfound(method)
             return
         
-        method.inputvalue = duration
+        method.minfo_value = duration
 
         fps_str = self.probe.fps()
         if not fps_str:
-            method.outputvalue = duration
+            method.mpulse_value = duration
             self._add_found(method)
             return
         
         fps_int = round(float(fps_str))
         hrminsec = [0, 0, float(duration)]
         frames = tclib3.ms_to_frames(hrminsec, fps_int, True)
-        method.outputvalue = tclib3.frames_to_tc(frames-1, fps_int, self._is_df())
+        method.mpulse_value = tclib3.frames_to_tc(frames-1, fps_int, self._is_df())
         self._add_found(method)
 
     def _resolution_spec(self, method: SpecInfo) -> None:
@@ -178,12 +144,12 @@ class SpecInterface:
         if resolution_str is None:
             self._add_notfound(method)
             return
-        method.inputvalue = f"{resolution_str[0]},{resolution_str[1]}"
-        method.outputvalue = f"{resolution_str[0]} x {resolution_str[1]}"
+        method.minfo_value = f"{resolution_str[0]},{resolution_str[1]}"
+        method.mpulse_value = f"{resolution_str[0]} x {resolution_str[1]}"
         self._add_found(method)
 
     def _dropframe_spec(self, method: SpecInfo) -> None:
         is_df = self._is_df()
-        method.inputvalue = "True" if is_df else ""
-        method.outputvalue = "Y" if is_df else "N"
+        method.minfo_value = "True" if is_df else ""
+        method.mpulse_value = "Y" if is_df else "N"
         self._add_found(method)
