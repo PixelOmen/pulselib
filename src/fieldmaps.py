@@ -34,7 +34,7 @@ class SimpleFieldMap:
             case _:
                 raise NotImplementedError(f"SimpleFieldMap.read: {self.ftype}")
 
-    def write(self, value: Any) -> dict[str, Any]:
+    def patch_op(self, value: Any) -> dict[str, Any]:
         match self.ftype:
             case FieldTypeEnum.STRING:
                 return self._write_single(str(value))
@@ -80,5 +80,5 @@ class SimpleFieldMap:
     
     def _write_enum(self, value: str) -> dict[str, Any]:
         if value not in self.enumdict:
-            raise ValueError(f"SimpleFieldMap enum value not in enumdict: {value}")
+            raise ValueError(f"SimpleFieldMap - {self.name} - enum value not in enumdict: {value}")
         return self._write_single(self.enumdict[value], self.keys[0])
