@@ -8,6 +8,6 @@ class Config:
     WO_URL = "http://xytechapp01:11000/api/v1/database/REI_LIVE/JmWorkOrder"
     WO_QUERY_URL = "http://xytechapp01:11000/api/v1/database/REI_LIVE/JmWorkOrderList"
     ASSET_SESSION_URL = "http://xytechapp01:11000/api/v1/database/REI_LIVE/LibMaster_ImSession_Related",
-    MEDIAINFO_URL = "http://10.0.20.96:4020/api/probe"
+    MEDIAINFO_URL = "http://10.0.20.96:PORT/api/probe"
 
 CONFIG = Config()

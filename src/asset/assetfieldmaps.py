@@ -25,7 +25,7 @@ RESOLUTION_ENUM: dict[str, int] = {
     "4096 x 3120": 9
 }
 
-ASSET_MAPS = {
+ASSET_FIELD_MAPS = {
     "container": SimpleFieldMap("container", FieldTypeEnum.STRING, "REI_field_28"),
     "length": SimpleFieldMap("length", FieldTypeEnum.STRING, "REI_field_21"),
     "resolution": SimpleFieldMap("resolution", FieldTypeEnum.BUILTIN_ENUM, ["format_size_no", "format_size_desc"], enumdict=RESOLUTION_ENUM),

@@ -3,12 +3,13 @@ import requests
 
 from ... import utils
 from ...config import CONFIG
+from .assetsessionmaps import ASSET_SESSION_MAPS
 
 def patch_po(session_num: str, po_num: str) -> None:
     patch_url = f"{CONFIG.ASSET_SESSION_URL}/session_no={session_num}"
     patch = [{
         "op": "replace",
-        "path": "REIQC_field_44",
+        "path": ASSET_SESSION_MAPS["po"].keys,
         "value": po_num
     }]
     res = requests.patch(url=patch_url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD), json=patch)

@@ -4,15 +4,17 @@ from dataclasses import dataclass, field
 
 import tclib3
 
-from .assetfieldmaps import ASSET_MAPS
+from .assetfieldmaps import ASSET_FIELD_MAPS
 
 if TYPE_CHECKING:
     from mediaprobe import MediaProbe
     from ..fieldmaps import SimpleFieldMap
 
+    
+
 @dataclass
 class SpecInfo:
-    spec: str
+    name: str
     minfo_track: str=""
     minfo_field: str=""
     probetype: str="simple"
@@ -23,7 +25,7 @@ class SpecInfo:
     found: bool=False
 
     def __post_init__(self) -> None:
-        self.mapping = ASSET_MAPS[self.spec]
+        self.mapping = ASSET_FIELD_MAPS[self.name]
 
     def patch_op(self) -> dict:
         return self.mapping.patch_op(self.mpulse_value)
@@ -89,6 +91,11 @@ class SpecInterface:
         self.notfound: list[SpecInfo] = []
         self._find()
 
+    def get_spec(self, spec: str) -> SpecInfo | None:
+        for specinfo in self.all:
+            if specinfo.name.lower() == spec.lower():
+                return specinfo
+
     def patch_ops(self) -> list[dict]:
         return [method.patch_op() for method in self.found]
 
@@ -117,6 +124,7 @@ class SpecInterface:
                 self._dict_lookup(method)
             elif method.probetype == "complex":
                 self._complex_lookup(method)
+        assert len(self.all) == len(self.found) + len(self.notfound)
 
     def _simple_lookup(self, method: SpecInfo) -> None:
         for track in self.probe.fulljson["tracks"]:
@@ -125,10 +133,12 @@ class SpecInterface:
                 if value:
                     method.minfo_value = value
                     method.mpulse_value = value
+                    method.found = True
                     self._add_found(method)
                 else:
                     self._add_notfound(method)
-                break
+                return
+        self._add_notfound(method)
 
     def _dict_lookup(self, method: SpecInfo) -> None:
         self._simple_lookup(method)
@@ -141,7 +151,7 @@ class SpecInterface:
             method.mpulse_value = mpulse_value
 
     def _complex_lookup(self, method: SpecInfo) -> None:
-        match method.spec:
+        match method.name:
             case "container":
                 self._container_spec(method)
             case "length":
@@ -151,7 +161,7 @@ class SpecInterface:
             case "dropframe":
                 self._dropframe_spec(method)
             case _:
-                raise NotImplementedError(f"SpecInterface._complex: {method.spec}")
+                raise NotImplementedError(f"SpecInterface._complex: {method.name}")
 
     def _is_df(self) -> bool:
         start_tc = self.probe.start_tc()

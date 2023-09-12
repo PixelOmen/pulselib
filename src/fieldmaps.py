@@ -10,6 +10,13 @@ class FieldTypeEnum:
     def __init__(self):
         raise NotImplementedError("FieldTypeEnum cannot be instantiated")
 
+    @classmethod
+    def name(cls, value: int) -> str:
+        for k, v in cls.__dict__.items():
+            if v == value:
+                return k
+        return ""
+
 class SimpleFieldMap:
     def __init__(self, name: str, ftype: int, keys: Any, nestedcheckmark: bool=False, enumdict: dict[str, int]=...) -> None:
         if 0 > ftype > 4:
@@ -20,7 +27,7 @@ class SimpleFieldMap:
         self.ftype = ftype
         self.keys = keys
         self.nestedcheckmark = nestedcheckmark
-        self.enumdict = enumdict
+        self.enumdict = enumdict if enumdict is not ... else {}
 
     def read(self, jdict: dict[str, Any]) -> Any:
         match self.ftype:
