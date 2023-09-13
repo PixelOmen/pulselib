@@ -84,31 +84,49 @@ SPEC_PROBE_MAP_COMPLEX: list[str] = [
 # May need to add handling for this error:
 # "error": "A matching value could not be found for the custom dropdown field REI_field_19; Value: 42 bit.\r\n"
 class SpecInterface:
-    def __init__(self, mpulse_path: str, probe: "MediaProbe"):
+    def __init__(self, mpulse_path: str):
         self.mpulse_path = mpulse_path
-        self.probe = probe
         self.all: list[SpecInfo] = self._create_specinfo()
         self.found: list[SpecInfo] = []
         self.notfound: list[SpecInfo] = []
-        self._find()
+        self._isprobed = False
+
+    @property
+    def isprobed(self) -> bool:
+        return self._isprobed
+
+    def probe(self, probe: "MediaProbe") -> None:
+        for method in self.all:
+            if method.probetype == "simple":
+                self._simple_lookup(method, probe)
+            elif method.probetype == "dict":
+                self._dict_lookup(method, probe)
+            elif method.probetype == "complex":
+                self._complex_lookup(method, probe)
+        assert len(self.all) == len(self.found) + len(self.notfound)
+        self._isprobed = True
 
     def get_spec(self, spec: str) -> SpecInfo | None:
+        if not self.isprobed:
+            raise RuntimeError("SpecInterface.get_spec: probe() must be called before get_spec()")
         for specinfo in self.all:
             if specinfo.name.lower() == spec.lower():
                 return specinfo
 
     def patch_ops(self) -> list[dict]:
+        if not self.isprobed:
+            raise RuntimeError("SpecInterface.patch_ops: probe() must be called before patch_ops()")
         return [method.patch_op() for method in self.found]
 
     def _create_specinfo(self) -> list[SpecInfo]:
-        simple = [SpecInfo(spec, *SPEC_PROBE_MAP_SIMPLE[spec], probetype="simple") for spec in SPEC_PROBE_MAP_SIMPLE]
-        complex = [SpecInfo(spec, probetype="complex") for spec in SPEC_PROBE_MAP_COMPLEX]
-        maps = []
+        simple_map = [SpecInfo(spec, *SPEC_PROBE_MAP_SIMPLE[spec], probetype="simple") for spec in SPEC_PROBE_MAP_SIMPLE]
+        complex_map = [SpecInfo(spec, probetype="complex") for spec in SPEC_PROBE_MAP_COMPLEX]
+        all_maps = simple_map + complex_map
         for spec in SPEC_PROBE_MAP_DICT:
             args = SPEC_PROBE_MAP_DICT[spec][:-1]
             outputdict = SPEC_PROBE_MAP_DICT[spec][-1]
-            maps.append(SpecInfo(spec, *args, probetype="dict", outputdict=outputdict))
-        return simple + maps + complex
+            all_maps.append(SpecInfo(spec, *args, probetype="dict", outputdict=outputdict))
+        return all_maps
 
     def _add_found(self, method: SpecInfo) -> None:
         method.found = True
@@ -117,18 +135,8 @@ class SpecInterface:
     def _add_notfound(self, method: SpecInfo) -> None:
         self.notfound.append(method)
 
-    def _find(self) -> None:
-        for method in self.all:
-            if method.probetype == "simple":
-                self._simple_lookup(method)
-            elif method.probetype == "dict":
-                self._dict_lookup(method)
-            elif method.probetype == "complex":
-                self._complex_lookup(method)
-        assert len(self.all) == len(self.found) + len(self.notfound)
-
-    def _simple_lookup(self, method: SpecInfo) -> None:
-        for track in self.probe.fulljson["tracks"]:
+    def _simple_lookup(self, method: SpecInfo, probe: "MediaProbe") -> None:
+        for track in probe.fulljson["tracks"]:
             if track["@type"] == method.minfo_track:
                 value = track.get(method.minfo_field)
                 if value:
@@ -141,8 +149,8 @@ class SpecInterface:
                 return
         self._add_notfound(method)
 
-    def _dict_lookup(self, method: SpecInfo) -> None:
-        self._simple_lookup(method)
+    def _dict_lookup(self, method: SpecInfo, probe: "MediaProbe") -> None:
+        self._simple_lookup(method, probe)
         if method.found:
             if not isinstance(method.mpulse_value, str):
                 return
@@ -151,44 +159,44 @@ class SpecInterface:
                 return
             method.mpulse_value = mpulse_value
 
-    def _complex_lookup(self, method: SpecInfo) -> None:
+    def _complex_lookup(self, method: SpecInfo, probe: "MediaProbe") -> None:
         match method.name:
             case "container":
-                self._container_spec(method)
+                self._container_spec(method, probe)
             case "length":
-                self._length_spec(method)
+                self._length_spec(method, probe)
             case "resolution":
-                self._resolution_spec(method)
+                self._resolution_spec(method, probe)
             case "dropframe":
-                self._dropframe_spec(method)
+                self._dropframe_spec(method, probe)
             case _:
                 raise NotImplementedError(f"SpecInterface._complex: {method.name}")
 
-    def _is_df(self) -> bool:
-        start_tc = self.probe.start_tc()
+    def _is_df(self, probe: "MediaProbe") -> bool:
+        start_tc = probe.start_tc()
         if not start_tc:
             return False
         if ";" in start_tc:
             return True
         return False
 
-    def _container_spec(self, method: SpecInfo) -> None:
-        method.mpulse_value = Path(self.probe.filepath).suffix[1:].upper()
-        for track in self.probe.fulljson["tracks"]:
+    def _container_spec(self, method: SpecInfo, probe: "MediaProbe") -> None:
+        method.mpulse_value = Path(probe.filepath).suffix[1:].upper()
+        for track in probe.fulljson["tracks"]:
             if track["@type"] == "General":
                 method.minfo_value = track.get("Format", "")
                 break
         self._add_found(method)
             
-    def _length_spec(self, method: SpecInfo) -> None:
-        duration = self.probe.duration()
+    def _length_spec(self, method: SpecInfo, probe: "MediaProbe") -> None:
+        duration = probe.duration()
         if not duration:
             self._add_notfound(method)
             return
         
         method.minfo_value = duration
 
-        fps_str = self.probe.fps()
+        fps_str = probe.fps()
         if not fps_str:
             method.mpulse_value = duration
             self._add_found(method)
@@ -196,12 +204,12 @@ class SpecInterface:
         
         fps_int = round(float(fps_str))
         hrminsec = [0, 0, float(duration)]
-        frames = tclib3.ms_to_frames(hrminsec, fps_int, True)
-        method.mpulse_value = tclib3.frames_to_tc(frames-1, fps_int, self._is_df())
+        frames = tclib3.ms_to_frames(hrminsec, fps_int, hrminsec=True)
+        method.mpulse_value = tclib3.frames_to_tc(frames-1, fps_int, self._is_df(probe))
         self._add_found(method)
 
-    def _resolution_spec(self, method: SpecInfo) -> None:
-        resolution_str = self.probe.resolution(asint=False)
+    def _resolution_spec(self, method: SpecInfo, probe: "MediaProbe") -> None:
+        resolution_str = probe.resolution(asint=False)
         if resolution_str is None:
             self._add_notfound(method)
             return
@@ -209,8 +217,8 @@ class SpecInterface:
         method.mpulse_value = f"{resolution_str[0]} x {resolution_str[1]}"
         self._add_found(method)
 
-    def _dropframe_spec(self, method: SpecInfo) -> None:
-        is_df = self._is_df()
+    def _dropframe_spec(self, method: SpecInfo, probe: "MediaProbe") -> None:
+        is_df = self._is_df(probe)
         method.minfo_value = is_df
         method.mpulse_value = is_df
         self._add_found(method)

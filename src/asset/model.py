@@ -1,11 +1,15 @@
 from pathlib import Path
 
+from .probe import get_mediainfo
 from .specinterface import SpecInterface
-from .asset_requests import get_mediainfo
 from .assetfieldmaps import ASSET_FIELD_MAPS
 
 
 class Asset:
+    def __init__(self, jdict: dict, specinterface: SpecInterface=...) -> None:
+        self.jdict = jdict
+        self.specinterface = SpecInterface("") if specinterface is ... else specinterface
+
     @classmethod
     def from_interface(cls, specinterface: SpecInterface) -> "Asset":
         jdict = {}
@@ -15,19 +19,15 @@ class Asset:
         jdict[filename_key] = mpulse_path.name
         jdict[storage_path_key] = str(mpulse_path.parent)
         return cls(jdict, specinterface)
-    
-    def __init__(self, jdict: dict, specinterface: SpecInterface=...) -> None:
-        self.jdict = jdict
-        self.specinterface = specinterface if specinterface is not ... else None
 
-    def init_interface(self) -> None:
-        if self.specinterface:
-            return
-        filepath = self._get_path()
-        if not filepath:
-            raise LookupError("Asset._init_interface: unable to get filepath and/or storage_path")
-        info = get_mediainfo(str(filepath))
-        self.specinterface = SpecInterface(str(filepath), info)
+    def probe(self, port: int=80) -> None:
+        if not self.specinterface.mpulse_path:
+            filepath = self._get_path()
+            if not filepath:
+                raise LookupError("Asset._init_interface: unable to get filepath and/or storage_path")
+            self.specinterface.mpulse_path = str(filepath)
+        probe = get_mediainfo(self.specinterface.mpulse_path, port=port)
+        self.specinterface.probe(probe)
 
     def _get_path(self) -> Path | None:
         filename = ASSET_FIELD_MAPS["filename"].read(self.jdict)

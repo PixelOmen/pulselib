@@ -1,6 +1,6 @@
 import json
 import requests
-from typing import Any
+from typing import overload, Literal
 
 from . import Transaction
 from .. import utils, PhaseEnum
@@ -51,14 +51,20 @@ def gen_resultcolumns() -> str:
 def gen_listquery_url(query: str, resultcolumns: str) -> str:
     return f"{CONFIG.TRX_QUERY_URL}/?query={query}&resultColumns={resultcolumns}"
 
-def list_query(query: str, resultcolumns: str) -> Any:
+def list_query(query: str, resultcolumns: str) -> list[dict]:
     fullurl = gen_listquery_url(query, resultcolumns)
     res = requests.get(url=fullurl, auth=(CONFIG.USERNAME, CONFIG.PASSWORD))
     body = utils.verify_response(url=fullurl, response=res)
     return json.loads(body)
 
+@overload
 def by_date(daterange: tuple[str, str]=...,
-            onhold: bool=True, invoiced: bool=True, proposed: bool=True, raw: bool=False) -> list[Transaction]:
+            onhold: bool=True, invoiced: bool=True, proposed: bool=True, raw: Literal[True]=True) -> list[dict]:...
+@overload
+def by_date(daterange: tuple[str, str]=...,
+            onhold: bool=True, invoiced: bool=True, proposed: bool=True, raw: Literal[False]=False) -> list[Transaction]:...
+def by_date(daterange: tuple[str, str]=...,
+            onhold: bool=True, invoiced: bool=True, proposed: bool=True, raw: bool=False):
     query = gen_query(daterange)
     resultcolumns = gen_resultcolumns()
     response = list_query(query, resultcolumns)

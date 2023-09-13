@@ -47,7 +47,7 @@ def callsheet_by_date(daterange: tuple[str, str]=..., pdfpath: Path=...,
     if pdf_func is None:
         raise NotImplementedError(f"Callsheet type has not been implemented. Requested: {report_type}")
     _log_pdf_generation(onrequest, printlog, logger)
-    response = trx_requests.by_date(daterange, onhold=onhold, invoiced=invoiced, proposed=proposed)
+    response = trx_requests.by_date(daterange, onhold=onhold, invoiced=invoiced, proposed=proposed, raw=False)
     groups = ResourceGroups(response).roomgroups()
     pdf_func(groups, pdfpath, daterange=daterange)
     if pdfpath != DEFAULT_PDFPATH:
