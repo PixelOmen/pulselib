@@ -26,6 +26,7 @@ RESOLUTION_ENUM: dict[str, int] = {
 }
 
 ASSET_FIELD_MAPS = {
+    "assetno": SimpleFieldMap("asetno", FieldTypeEnum.DICT, ["master_no", "master_no"]),
     "filename": SimpleFieldMap("filename", FieldTypeEnum.STRING, "REI_field_9"),
     "storage_path": SimpleFieldMap("storage_path", FieldTypeEnum.STRING, "lib_mstr_file_storage_sys_path"),
     "container": SimpleFieldMap("container", FieldTypeEnum.STRING, "REI_field_28"),
