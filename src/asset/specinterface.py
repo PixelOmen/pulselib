@@ -84,7 +84,8 @@ SPEC_PROBE_MAP_COMPLEX: list[str] = [
 # May need to add handling for this error:
 # "error": "A matching value could not be found for the custom dropdown field REI_field_19; Value: 42 bit.\r\n"
 class SpecInterface:
-    def __init__(self, probe: "MediaProbe"):
+    def __init__(self, mpulse_path: str, probe: "MediaProbe"):
+        self.mpulse_path = mpulse_path
         self.probe = probe
         self.all: list[SpecInfo] = self._create_specinfo()
         self.found: list[SpecInfo] = []
