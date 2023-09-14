@@ -4,7 +4,7 @@ class FieldTypeEnum:
     STRING = 0
     NUMBER = 1
     CHECKMARK = 2
-    BUILTIN_ENUM = 3
+    MPULSE_ENUM = 3
     DICT = 4
 
     def __init__(self):
@@ -21,7 +21,7 @@ class SimpleFieldMap:
     def __init__(self, name: str, ftype: int, keys: Any, nestedcheckmark: bool=False, enumdict: dict[str, int]=...) -> None:
         if 0 > ftype > 4:
             raise ValueError(f"SimpleFieldMap: invalid ftype: {ftype}")
-        if ftype == FieldTypeEnum.BUILTIN_ENUM and enumdict is ...:
+        if ftype == FieldTypeEnum.MPULSE_ENUM and enumdict is ...:
             raise ValueError(f"SimpleFieldMap: BUILTIN_ENUM requires a enumdict")
         self.name = name
         self.ftype = ftype
@@ -36,7 +36,7 @@ class SimpleFieldMap:
             case FieldTypeEnum.CHECKMARK:
                 value = self._read_single(jdict)
                 return True if value == "Y" else False
-            case FieldTypeEnum.DICT | FieldTypeEnum.BUILTIN_ENUM:
+            case FieldTypeEnum.DICT | FieldTypeEnum.MPULSE_ENUM:
                 return self._read_dict(jdict)
             case _:
                 raise NotImplementedError(f"SimpleFieldMap.read: {self.ftype}")
@@ -53,7 +53,7 @@ class SimpleFieldMap:
                 if not isinstance(value, bool):
                     raise ValueError(f"SimpleFieldMap ftype of CHECKMARK requires a bool value: {value}")
                 return self._write_single("Y" if value else "N")
-            case FieldTypeEnum.BUILTIN_ENUM:
+            case FieldTypeEnum.MPULSE_ENUM:
                 return self._write_enum(value)
             case _:
                 raise NotImplementedError(f"SimpleFieldMap.write: {self.ftype}") 

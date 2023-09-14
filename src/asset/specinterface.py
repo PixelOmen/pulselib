@@ -3,11 +3,12 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 import tclib3
+import mediaprobe
+from mediaprobe import MediaProbe
 
 from .assetfieldmaps import ASSET_FIELD_MAPS
 
 if TYPE_CHECKING:
-    from mediaprobe import MediaProbe
     from ..fieldmaps import SimpleFieldMap
 
     
@@ -28,8 +29,29 @@ class SpecInfo:
         self.mapping = ASSET_FIELD_MAPS[self.name]
 
     def patch_op(self) -> dict:
-        return self.mapping.patch_op(self.mpulse_value)
+        if self.name == "video_bitrate" or self.name == "audio_bitrate":
+            formatted_size = mediaprobe.helpers.format_size(int(self.mpulse_value), returnbits=True, returnrate=True)
+        else:
+            formatted_size = self.mpulse_value
+        return self.mapping.patch_op(formatted_size)
 
+BITDEPTH_DICT: dict[str, str] = {
+    "8": "8 bit",
+    "10": "10 bit",
+    "12": "12 bit",
+    "16": "16 bit",
+    "24": "24 bit",
+    "32": "32 bit"
+}
+
+AUDIO_SAMPLERATE_DICT: dict[str, str] = {
+    "16000": "16000 Hz",
+    "32000": "32000 Hz",
+    "44100": "44100 Hz",
+    "48000": "48000 Hz",
+    "96000": "96000 Hz",
+    "192000": "192000 Hz"
+}
 
 COLOR_SPACE_DICT: dict[str, str] = {
     "BT.709": "Rec709",
@@ -59,19 +81,19 @@ SPEC_PROBE_MAP_SIMPLE: dict[str, tuple[str, str]] = {
     "video_codec": ("Video", "Format"),
     "video_profile": ("Video", "Format_Profile"),
     "video_bitrate": ("Video", "BitRate"),
-    "video_bitdepth": ("Video", "BitDepth"),
     "video_bitrate_mode": ("Video", "BitRate_Mode"),
     "audio_codec": ("Audio", "Format"),
     "audio_bitrate": ("Audio", "BitRate"),
-    "audio_bitdepth": ("Audio", "BitDepth"),
     "audio_bitrate_mode": ("Audio", "BitRate_Mode"),
-    "audio_samplerate": ("Audio", "SamplingRate"),
 }
 
 SPEC_PROBE_MAP_DICT: dict[str, tuple[str, str, dict]] = {
     "color_space": ("Video", "colour_primaries", COLOR_SPACE_DICT),
     "eotf": ("Video", "transfer_characteristics", EOTF_DICT),
     "matrix": ("Video", "matrix_coefficients", MATRIX_DICT),
+    "video_bitdepth": ("Video", "BitDepth", BITDEPTH_DICT),
+    "audio_bitdepth": ("Audio", "BitDepth", BITDEPTH_DICT),
+    "audio_samplerate": ("Audio", "SamplingRate", AUDIO_SAMPLERATE_DICT)
 }
 
 SPEC_PROBE_MAP_COMPLEX: list[str] = [
@@ -95,7 +117,7 @@ class SpecInterface:
     def isprobed(self) -> bool:
         return self._isprobed
 
-    def probe(self, probe: "MediaProbe") -> None:
+    def probefile(self, probe: "MediaProbe") -> None:
         for method in self.all:
             if method.probetype == "simple":
                 self._simple_lookup(method, probe)
