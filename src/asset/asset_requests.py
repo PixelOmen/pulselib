@@ -6,12 +6,10 @@ from ..config import CONFIG
 
 class AssetNotFoundError(Exception):
     def __init__(self, assetno: int):
-        self.assetno = assetno
         super().__init__(f"asset_requests: Asset not found: {assetno}")
 
 class AssetUnknownError(Exception):
     def __init__(self, assetno: int, err: str):
-        self.assetno = assetno
         super().__init__(f"asset_requests: Unknown error - {assetno} - {err}")
 
 def get(assetno: int) -> dict:
