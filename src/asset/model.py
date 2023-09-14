@@ -72,7 +72,7 @@ class Asset:
         if not assetno:
             raise LookupError("Asset.patch: unable to get assetno")
         patches = []
-        for method in self.specinterface.found:
+        for method in self.specinterface.all:
             patches.append(method.patch_op())
         if patches:
             asset_requests.patch(int(assetno), patches)
