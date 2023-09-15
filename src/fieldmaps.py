@@ -44,19 +44,32 @@ class SimpleFieldMap:
     def patch_op(self, value: Any) -> dict[str, Any]:
         match self.ftype:
             case FieldTypeEnum.STRING:
-                return self._write_single(str(value))
+                return self._patch_single(str(value))
             case FieldTypeEnum.NUMBER:
                 parsedvalue = float(value)
                 parsedvalue = int(parsedvalue) if parsedvalue.is_integer() else parsedvalue
-                return self._write_single(parsedvalue)
+                return self._patch_single(parsedvalue)
             case FieldTypeEnum.CHECKMARK:
                 if not isinstance(value, bool):
                     raise ValueError(f"SimpleFieldMap ftype of CHECKMARK requires a bool value: {value}")
-                return self._write_single("Y" if value else "N")
+                return self._patch_single("Y" if value else "N")
             case FieldTypeEnum.MPULSE_ENUM:
-                return self._write_enum(value)
+                return self._patch_enum(value)
             case _:
-                raise NotImplementedError(f"SimpleFieldMap.write: {self.ftype}") 
+                raise NotImplementedError(f"SimpleFieldMap.write: {self.ftype}")
+
+    def makejdict(self, value: Any) -> dict[str, Any]:
+        match self.ftype:
+            case FieldTypeEnum.STRING | FieldTypeEnum.NUMBER:
+                return self._jdict_single(value)
+            case FieldTypeEnum.CHECKMARK:
+                return self._jdict_single("Y" if value else "N")
+            case FieldTypeEnum.DICT:
+                return self._jdict_dict(value)
+            case FieldTypeEnum.MPULSE_ENUM:
+                return self._jdict_enum(value)
+            case _:
+                raise NotImplementedError(f"SimpleFieldMap.jdict_op: {self.ftype}")
         
     def _read_single(self, jdict: dict[str, Any]) -> Any:
         if not isinstance(self.keys, str):
@@ -68,14 +81,17 @@ class SimpleFieldMap:
             raise ValueError(f"SimpleFieldMap key must be a list of strings: {self.keys}")
         if len(self.keys) < 2:
             raise ValueError(f"SimpleFieldMap ftype of dict needs at least 2 keys: {self.keys}")
-        lastresult: Any = jdict[self.keys[0]]
-        for key in self.keys[1:]:
-            lastresult = lastresult[key]
+        try:
+            lastresult: Any = jdict[self.keys[0]]
+            for key in self.keys[1:]:
+                lastresult = lastresult[key]
+        except (KeyError, TypeError):
+            return None
         if self.nestedcheckmark:
             return True if lastresult == "Y" else False
         return lastresult
     
-    def _write_single(self, value: Any, writekey: str=...) -> dict[str, Any]:
+    def _patch_single(self, value: Any, writekey: str=...) -> dict[str, Any]:
         key = writekey if writekey is not ... else self.keys
         if not isinstance(key, str):
             raise ValueError(f"SimpleFieldMap key must be a string: {key}")
@@ -85,7 +101,31 @@ class SimpleFieldMap:
             "value": value
         }
     
-    def _write_enum(self, value: str) -> dict[str, Any]:
+    def _patch_enum(self, value: str) -> dict[str, Any]:
         if value not in self.enumdict:
             raise ValueError(f"SimpleFieldMap - {self.name} - enum value not in enumdict: {value}")
-        return self._write_single(self.enumdict[value], self.keys[0])
+        return self._patch_single(self.enumdict[value], self.keys[0])
+
+    def _jdict_single(self, value: Any, writekey: str=...) -> dict[str, Any]:
+        key = writekey if writekey is not ... else self.keys
+        if not isinstance(key, str):
+            raise ValueError(f"SimpleFieldMap key must be a string: {key}")
+        return {self.keys: value}
+
+    def _jdict_dict(self, value: Any) -> dict[str, Any]:
+        if not isinstance(self.keys, list):
+            raise ValueError(f"SimpleFieldMap key must be a list of strings: {self.keys}")
+        if len(self.keys) < 2:
+            raise ValueError(f"SimpleFieldMap ftype of dict needs at least 2 keys: {self.keys}")
+        lastresult = {self.keys[-1]: value}
+        # backwards loop
+        for key in reversed(self.keys[:-1]):
+            lastresult = {key: lastresult}
+        return lastresult
+
+    def _jdict_enum(self, value: Any) -> dict[str, Any]:
+        if not isinstance(self.keys, list):
+            raise ValueError(f"SimpleFieldMap key must be a list of strings: {self.keys}")
+        if value not in self.enumdict:
+            raise ValueError(f"SimpleFieldMap - {self.name} - enum value not in enumdict: {value}")
+        return self._jdict_single(self.enumdict[value], self.keys[0])

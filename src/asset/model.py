@@ -66,16 +66,30 @@ class Asset:
         self._file_exists = True
 
     def patch(self) -> None:
+        if not self.asset_exists():
+            raise RuntimeError(f"Attemped to patch non-existent asset: {self.specinterface.mpulse_path}")
         if not self._wasprobed:
             self.probefile()
         assetno = ASSET_FIELD_MAPS["assetno"].read(self.jdict)
         if not assetno:
             raise LookupError("Asset.patch: unable to get assetno")
         patches = []
-        for method in self.specinterface.all:
-            patches.append(method.patch_op())
+        for specinfo in self.specinterface.all:
+            patches.append(specinfo.patch_op())
         if patches:
             asset_requests.patch(int(assetno), patches)
+
+    def new(self) -> dict:
+        if self.asset_exists():
+            assetno = ASSET_FIELD_MAPS["assetno"].read(self.jdict)
+            raise RuntimeError(f"Attemped to create existing asset: Assetno: {assetno} - {self.specinterface.mpulse_path}")
+        if not self._wasprobed:
+            self.probefile()
+        jdict = {}
+        for specinfo in self.specinterface.all:
+            jdict.update(specinfo.makejdict())
+        return jdict
+        # asset_requests.post(jdict, self.specinterface.mpulse_path)
 
     def _get_path(self) -> Path | None:
         filename = ASSET_FIELD_MAPS["filename"].read(self.jdict)

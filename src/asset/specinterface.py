@@ -29,11 +29,15 @@ class SpecInfo:
         self.mapping = ASSET_FIELD_MAPS[self.name]
 
     def patch_op(self) -> dict:
+        return self.mapping.patch_op(self._format(self.mpulse_value))
+
+    def makejdict(self) -> dict:
+        return self.mapping.makejdict(self._format(self.mpulse_value))
+
+    def _format(self, value: str | bool) -> str | bool:
         if self.name == "video_bitrate" or self.name == "audio_bitrate":
-            formatted_size = mediaprobe.helpers.format_size(int(self.mpulse_value), returnbits=True, returnrate=True)
-        else:
-            formatted_size = self.mpulse_value
-        return self.mapping.patch_op(formatted_size)
+            return mediaprobe.helpers.format_size(int(value), returnbits=True, returnrate=True)
+        return value
 
 BITDEPTH_DICT: dict[str, str] = {
     "8": "8 bit",

@@ -1,5 +1,11 @@
 from ..fieldmaps import SimpleFieldMap, FieldTypeEnum
 
+NEW_ASSET_TEMPLATE = {
+    "asset_type_no": {
+        "asset_type_no": 5,
+    }
+}
+
 # From Frame Rates table in MetaVault->Setup
 FRAMERATE_ENUM: dict[str, int] = {
     "23.976": 10,
@@ -27,7 +33,7 @@ RESOLUTION_ENUM: dict[str, int] = {
 
 
 ASSET_FIELD_MAPS = {
-    "assetno": SimpleFieldMap("asetno", FieldTypeEnum.DICT, ["master_no", "master_no"]),
+    "assetno": SimpleFieldMap("assetno", FieldTypeEnum.DICT, ["master_no", "master_no"]),
     "filename": SimpleFieldMap("filename", FieldTypeEnum.STRING, "REI_field_9"),
     "storage_path": SimpleFieldMap("storage_path", FieldTypeEnum.STRING, "lib_mstr_file_storage_sys_path"),
     "container": SimpleFieldMap("container", FieldTypeEnum.STRING, "REI_field_28"),

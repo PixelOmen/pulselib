@@ -9,8 +9,8 @@ class AssetNotFoundError(Exception):
         super().__init__(f"asset_requests: Asset not found: {assetno}")
 
 class AssetUnknownError(Exception):
-    def __init__(self, assetno: int, err: str):
-        super().__init__(f"asset_requests: Unknown error - {assetno} - {err}")
+    def __init__(self, assetid: int | str, err: str):
+        super().__init__(f"asset_requests: Unknown error - {assetid} - {err}")
 
 def get(assetno: int) -> dict:
     url = f"{CONFIG.ASSET_URL}/master_no={str(assetno)}"
@@ -36,3 +36,13 @@ def patch(assetno: int, patchlist: list[dict]) -> None:
                 raise AssetNotFoundError(assetno)
             else:
                 raise AssetUnknownError(assetno, err)
+
+def post(jdict: dict, filename: str) -> None:
+    url = f"{CONFIG.ASSET_URL}"
+    r = requests.post(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD), json=jdict)
+    body = utils.verify_response(url=url, response=r)
+    if body:
+        jbody = json.loads(body)
+        err = jbody.get("error")
+        if err:
+            raise AssetUnknownError(filename, err)
