@@ -1,2 +1,2 @@
 from .model import WorkOrder
-from .mosources.mosourcesfieldmaps import MOSOURCES_FIELD_MAPS
+from .sources.wosourcesfieldmaps import WOSOURCES_FIELD_MAPS

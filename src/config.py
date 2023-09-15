@@ -8,6 +8,7 @@ class Config:
     WO_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/JmWorkOrder"
     WO_QUERY_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/JmWorkOrderList"
     ASSET_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMaster"
+    ASSET_QUERY_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMasterList"
     ASSET_SESSION_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMaster_ImSession_Related"
     MEDIAINFO_URL = "http://10.0.20.96:PORT/api/probe"
     MI_DEBUG: bool=True
@@ -27,6 +28,7 @@ class Config:
         cls.WO_QUERY_URL = cls.WO_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.ASSET_URL = cls.ASSET_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.ASSET_SESSION_URL = cls.ASSET_SESSION_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
+        cls.ASSET_QUERY_URL = cls.ASSET_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.MEDIAINFO_URL = cls.MEDIAINFO_URL.replace("PORT", mi_port)
 
 Config.init_urls()

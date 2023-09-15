@@ -2,7 +2,7 @@ from ..fieldmaps import SimpleFieldMap, FieldTypeEnum
 
 NEW_ASSET_TEMPLATE = {
     "asset_type_no": {
-        "asset_type_no": 5,
+        "asset_type_no": 2,
     }
 }
 
@@ -35,7 +35,7 @@ RESOLUTION_ENUM: dict[str, int] = {
 ASSET_FIELD_MAPS = {
     "assetno": SimpleFieldMap("assetno", FieldTypeEnum.DICT, ["master_no", "master_no"]),
     "filename": SimpleFieldMap("filename", FieldTypeEnum.STRING, "REI_field_9"),
-    "storage_path": SimpleFieldMap("storage_path", FieldTypeEnum.STRING, "lib_mstr_file_storage_sys_path"),
+    "filepath": SimpleFieldMap("filepath", FieldTypeEnum.STRING, "REI_field_29"),
     "container": SimpleFieldMap("container", FieldTypeEnum.STRING, "REI_field_28"),
     "length": SimpleFieldMap("length", FieldTypeEnum.STRING, "REI_field_21"),
     "resolution": SimpleFieldMap("resolution", FieldTypeEnum.MPULSE_ENUM, ["format_size_no", "format_size_desc"], enumdict=RESOLUTION_ENUM),
