@@ -105,16 +105,19 @@ class Asset:
         asset_requests.post(jdict, self.specinterface.mpulse_path)
 
     def _find_asset(self) -> dict:
+        filename_key = ASSET_FIELD_MAPS["filename"].keys
+        filepath_key = ASSET_FIELD_MAPS["filepath"].keys
         if self.specinterface.mpulse_path:
             mpulse_path = Path(self.specinterface.mpulse_path)
             filename = mpulse_path.name
             filepath = str(mpulse_path.parent)
-            query = {"filename": filename, "filepath": filepath}
+            query = {filename_key: filename, filepath_key: filepath}
         else:
             fullpath = self._get_path()
             if not fullpath:
                 raise AssetPathNotFoundError(f"Asset._find_asset: {self.assetno} - {self.specinterface.mpulse_path}")
-            query = {"filename": fullpath.name, "filepath": str(fullpath.parent)}
+            query = {filename_key: fullpath.name, filepath_key: str(fullpath.parent)}
+
         results = asset_requests.query(query)
         if len(results) > 1:
             raise RuntimeError(f"Multiple assets found: {query}")
