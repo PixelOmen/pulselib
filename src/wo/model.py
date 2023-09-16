@@ -10,7 +10,7 @@ class WorkOrder:
     def __init__(self, jdict: dict) -> None:
         self.jdict = jdict
         self.fieldmaps = WO_FIELD_MAPS
-        self.wo_no: str = self.find("wo_no")
+        self.wo_no: str = self.find_key("wo_no")
         self.sources = self._get_sources()
         self.assets: list[Asset] = []
         self._assetspulled = False
@@ -21,7 +21,7 @@ class WorkOrder:
         if self._assetspulled:
             self.pull_assets(refresh=True)
 
-    def find(self, key: str) -> Any:
+    def find_key(self, key: str) -> Any:
         return self.fieldmaps[key].read(self.jdict)
     
     def pull_assets(self, refresh: bool=False) -> None:
@@ -31,7 +31,7 @@ class WorkOrder:
             return
         assets = []
         for source in self.sources:
-            source_no = source.find("source_no")
+            source_no = source.find_key("source_no")
             if source_no:
                 jdict = asset_requests.get(source_no)
                 assets.append(Asset(jdict))
