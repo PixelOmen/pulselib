@@ -38,14 +38,18 @@ class WorkOrder:
         self.assets = assets
         self._assetspulled = True
 
-    # -----------  Not correct, need to fix -----------
-    # def make_asset(self, source_no: str) -> str:
-    #     for source in self.sources:
-    #         if source.find("source_no") == source_no:
-    #             asset = source.make_asset()
-    #             asset.post_new()
-    #             self.refresh()
-    #     raise ValueError(f"Unable to find source: {source_no}")
+    def make_asset(self, source_no: str) -> str:
+        for source in self.sources:
+            if source.find_key("source_no") == source_no:
+                asset = source.make_asset()
+                asset.post_new()
+                asset.refresh()
+                self.assets.append(asset)
+                if not asset.assetno:
+                    msg = f"Workorder.make_asset: Asset did not receive assetno, source: {source_no}"
+                    raise RuntimeError(msg)
+                return asset.assetno
+        raise ValueError(f"Workorder.make_asset: Unable to find source: {source_no}")
     
     def _get_sources(self) -> list[WOSource]:
         asset_dicts: list[dict] | None = self.jdict.get("mo_source")

@@ -16,7 +16,7 @@ def print_transactions(trxlist: list["Transaction"]) -> None:
     print(jstr)
 
 def verify_response(url: str, response: "Response") -> str:
-    if response.status_code == 204:
+    if response.status_code == 204 or response.status_code == 201:
         return ""
     if not response.text:
         msg1 = "HTTP Response did not contain a body."

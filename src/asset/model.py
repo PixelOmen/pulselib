@@ -108,12 +108,23 @@ class Asset:
             if exists:
                 assetno = ASSET_FIELD_MAPS["assetno"].read(exists)
                 raise AssetExistsError(f"Attemped to create existing asset: Assetno: {assetno} - {self.specinterface.mpulse_path}")
+            
         if not self._wasprobed:
             self.probefile()
+
         jdict = {}
         for specinfo in self.specinterface.all:
             jdict.update(specinfo.makejdict())
         jdict.update(NEW_ASSET_TEMPLATE)
+
+        fullpath = Path(self.specinterface.mpulse_path)
+        filename_key = ASSET_FIELD_MAPS["filename"].keys
+        filepath_key = ASSET_FIELD_MAPS["filepath"].keys
+        desc_key = ASSET_FIELD_MAPS["asset_desc"].keys
+        jdict[filename_key] = fullpath.name
+        jdict[filepath_key] = str(fullpath.parent)
+        jdict[desc_key] = fullpath.name
+
         asset_requests.post(jdict, self.specinterface.mpulse_path)
 
     def get_asset(self) -> dict:

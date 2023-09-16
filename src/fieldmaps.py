@@ -110,7 +110,7 @@ class SimpleFieldMap:
         key = writekey if writekey is not ... else self.keys
         if not isinstance(key, str):
             raise ValueError(f"SimpleFieldMap key must be a string: {key}")
-        return {self.keys: value}
+        return {key: value}
 
     def _jdict_dict(self, value: Any) -> dict[str, Any]:
         if not isinstance(self.keys, list):
