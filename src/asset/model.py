@@ -53,12 +53,15 @@ class Asset:
     def file_exists(self, retry: bool=False) -> bool:
         if not retry and self._file_exists is not None:
             return self._file_exists
-        path = self._get_path()
+        if self.specinterface.mpulse_path:
+            path = Path(self.specinterface.mpulse_path)
+        else:
+            path = self._get_path()
         if not path:
             return False
         try:
             get_mediainfo(str(path))
-        except LookupError:
+        except FileNotFoundError:
             self._file_exists = False
             return False
         self._file_exists = True

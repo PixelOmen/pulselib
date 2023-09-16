@@ -74,7 +74,7 @@ class SimpleFieldMap:
     def _read_single(self, jdict: dict[str, Any]) -> Any:
         if not isinstance(self.keys, str):
             raise ValueError(f"SimpleFieldMap key must be a string: {self.keys}")
-        return jdict[self.keys]
+        return jdict.get(self.keys)
 
     def _read_dict(self, jdict: dict[str, Any]) -> Any:
         if not isinstance(self.keys, list):
