@@ -13,9 +13,17 @@ class AssetPathNotFoundError(LookupError):
     def __init__(self, origin: str) -> None:
         super().__init__(f"{origin}: unable to get filepath and/or filename")
 
+class AssetNotFoundError(LookupError):
+    def __init__(self, id: dict | str) -> None:
+        super().__init__(f"Asset not found: {id}")
+
 class AssetExistsError(Exception):
     def __init__(self, path: str) -> None:
         super().__init__(f"Asset already exists: {path}")
+
+class MultipleAssetsFoundError(Exception):
+    def __init__(self, query: dict) -> None:
+        super().__init__(f"Multiple assets found: {query}")
 
 
 class Asset:
@@ -41,9 +49,9 @@ class Asset:
         if self.assetno:
             self.jdict = asset_requests.get(self.assetno)
         else:
-            results = self._find_asset()
+            results = self.get_asset()
             if not results:
-                raise RuntimeError(f"Attemped to refresh non-existent asset: {self.specinterface.mpulse_path}")
+                raise AssetNotFoundError(f"Attemped to refresh non-existent asset: {self.specinterface.mpulse_path}")
             self.jdict = results
             assetno = ASSET_FIELD_MAPS["assetno"].read(results)
             if not assetno:
@@ -94,11 +102,12 @@ class Asset:
 
     def post_new(self) -> None:
         if self.assetno:
-            raise RuntimeError(f"Attemped to create existing asset: Assetno: {self.assetno} - {self.specinterface.mpulse_path}")
+            raise AssetExistsError(f"Attemped to create existing asset: Assetno: {self.assetno} - {self.specinterface.mpulse_path}")
         else:
-            exists = self._find_asset()
+            exists = self.get_asset()
             if exists:
-                raise RuntimeError(f"Attemped to create existing asset: Assetno: {exists} - {self.specinterface.mpulse_path}")
+                assetno = ASSET_FIELD_MAPS["assetno"].read(exists)
+                raise AssetExistsError(f"Attemped to create existing asset: Assetno: {assetno} - {self.specinterface.mpulse_path}")
         if not self._wasprobed:
             self.probefile()
         jdict = {}
@@ -107,7 +116,7 @@ class Asset:
         jdict.update(NEW_ASSET_TEMPLATE)
         asset_requests.post(jdict, self.specinterface.mpulse_path)
 
-    def _find_asset(self) -> dict:
+    def get_asset(self) -> dict:
         filename_key = ASSET_FIELD_MAPS["filename"].keys
         filepath_key = ASSET_FIELD_MAPS["filepath"].keys
         if self.specinterface.mpulse_path:
@@ -123,14 +132,17 @@ class Asset:
 
         results = asset_requests.query(query)
         if len(results) > 1:
-            raise RuntimeError(f"Multiple assets found: {query}")
+            raise MultipleAssetsFoundError(query)
         elif len(results) < 1:
             return {}
         return results[0]            
 
     def _get_path(self) -> Path | None:
-        filename = ASSET_FIELD_MAPS["filename"].read(self.jdict)
-        filepath = ASSET_FIELD_MAPS["filepath"].read(self.jdict)
+        try:
+            filename = ASSET_FIELD_MAPS["filename"].read(self.jdict)
+            filepath = ASSET_FIELD_MAPS["filepath"].read(self.jdict)
+        except KeyError:
+            return None
         if not filename or not filepath:
             return None
         return Path(filepath) / filename
