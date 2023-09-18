@@ -11,7 +11,7 @@ class Config:
     ASSET_QUERY_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMasterList"
     ASSET_SESSION_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMaster_ImSession_Related"
     MEDIAINFO_URL = "http://10.0.20.96:PORT/api/probe"
-    MI_DEBUG: bool=True
+    MI_DEBUG: bool=False
     MP_DEBUG: bool=False
     MI_DEBUG_PORT = "4020"
     MI_LIVE_PORT = "80"
