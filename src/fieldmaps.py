@@ -55,8 +55,10 @@ class SimpleFieldMap:
                 return self._patch_single("Y" if value else "N")
             case FieldTypeEnum.MPULSE_ENUM:
                 return self._patch_enum(value)
+            case FieldTypeEnum.DICT:
+                return self._patch_single(value, self.keys[0])
             case _:
-                raise NotImplementedError(f"SimpleFieldMap.write: {self.ftype}")
+                raise NotImplementedError(f"SimpleFieldMap.patch: {self.ftype}")
 
     def makejdict(self, value: Any) -> dict[str, Any]:
         match self.ftype:

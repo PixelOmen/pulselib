@@ -22,7 +22,8 @@ class AssetExistsError(Exception):
         super().__init__(f"Asset already exists: {path}")
 
 class MultipleAssetsFoundError(Exception):
-    def __init__(self, query: dict) -> None:
+    def __init__(self, query: dict, assetdicts: list[dict]) -> None:
+        self.assetdicts = assetdicts
         super().__init__(f"Multiple assets found: {query}")
 
 
@@ -32,6 +33,7 @@ class Asset:
         self.specinterface = SpecInterface("") if specinterface is ... else specinterface
         self.assetno: str | None = ASSET_FIELD_MAPS["assetno"].read(self.jdict)
         self.probe: MediaProbe | None = None
+        self.wo_seq: str = ""
         self._wasprobed = False
         self._file_exists: bool | None = None
 
@@ -102,12 +104,12 @@ class Asset:
 
     def post_new(self) -> None:
         if self.assetno:
-            raise AssetExistsError(f"Attemped to create existing asset: Assetno: {self.assetno} - {self.specinterface.mpulse_path}")
+            raise AssetExistsError(f"Assetno: {self.assetno} - {self.specinterface.mpulse_path}")
         else:
             exists = self.get_asset()
             if exists:
                 assetno = ASSET_FIELD_MAPS["assetno"].read(exists)
-                raise AssetExistsError(f"Attemped to create existing asset: Assetno: {assetno} - {self.specinterface.mpulse_path}")
+                raise AssetExistsError(f"Assetno: {assetno} - {self.specinterface.mpulse_path}")
             
         if not self._wasprobed:
             self.probefile()
@@ -143,7 +145,7 @@ class Asset:
 
         results = asset_requests.query(query)
         if len(results) > 1:
-            raise MultipleAssetsFoundError(query)
+            raise MultipleAssetsFoundError(query, results)
         elif len(results) < 1:
             return {}
         return results[0]            

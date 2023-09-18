@@ -54,3 +54,16 @@ def patch(wo_no: str, patchlist: list[dict]) -> None:
                 raise WorkOrderNotFoundError(wo_no)
             else:
                 raise WorkOrderUnknownError(wo_no, err)
+
+def patch_source(wo_no: str, seq_no: str, patchlist: list[dict]) -> None:
+    url = f"{CONFIG.WO_URL}/wo_no_seq={str(wo_no)}/mo_source/dsp_seq={str(seq_no)}"
+    r = requests.patch(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD), json=patchlist)
+    body = utils.verify_response(url=url, response=r)
+    if body:
+        jbody = json.loads(body)
+        err = jbody.get("error")
+        if err:
+            if err.startswith("Alternate key not found:"):
+                raise WorkOrderNotFoundError(wo_no)
+            else:
+                raise WorkOrderUnknownError(wo_no, err)

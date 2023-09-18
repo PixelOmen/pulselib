@@ -9,6 +9,7 @@ class WOSource:
     def __init__(self, jdict: dict) -> None:
         self.jdict = jdict
         self.fieldmaps = WOSOURCES_FIELD_MAPS
+        self.seq_no: str = self.find_key("seq_no")
         self.source_no: str = self.find_key("source_no")
         self.asset_no: str = self.find_key("asset_no")
         self.filepath: str = self.find_key("filepath")
@@ -18,7 +19,7 @@ class WOSource:
     def find_key(self, key: str) -> Any:
         return self.fieldmaps[key].read(self.jdict)
 
-    def make_asset(self) -> Asset:
+    def new_asset(self) -> Asset:
         if not self.filepath or not self.filename:
             raise LookupError(f"Unable to get filepath and/or filename from wosource: {self.source_no}")
         if not self.created:
@@ -26,3 +27,6 @@ class WOSource:
         full_path = Path(self.filepath) / self.filename
         specinterface = SpecInterface(str(full_path))
         return Asset.from_interface(specinterface)
+
+    def patch_op(self, assetno: str) -> dict:
+        return self.fieldmaps["asset_no"].patch_op(assetno)

@@ -1,6 +1,6 @@
 from typing import Any
 
-from ..asset import Asset, asset_requests
+from ..asset import Asset, asset_requests, AssetExistsError
 
 from . import wo_requests
 from .sources import WOSource
@@ -31,25 +31,54 @@ class WorkOrder:
             return
         assets = []
         for source in self.sources:
-            source_no = source.find_key("source_no")
-            if source_no:
-                jdict = asset_requests.get(source_no)
+            if source.asset_no:
+                jdict = asset_requests.get(source.asset_no)
                 assets.append(Asset(jdict))
         self.assets = assets
         self._assetspulled = True
 
-    def make_asset(self, source_no: str) -> str:
+    def sources_ready(self) -> list[WOSource]:
+        ready_to_create: list[WOSource] = []
         for source in self.sources:
-            if source.find_key("source_no") == source_no:
-                asset = source.make_asset()
-                asset.post_new()
+            if source.created and not source.asset_no and source.filepath and source.filename:
+                ready_to_create.append(source)
+        return ready_to_create
+
+    def make_asset(self, seq_no: str, use_existing: bool=True) -> str:
+        for source in self.sources:
+            if source.seq_no == seq_no:
+                asset = source.new_asset()
+                try:
+                    asset.post_new()
+                except AssetExistsError as e:
+                    if not use_existing:
+                        raise e
                 asset.refresh()
+                asset.wo_seq = source.seq_no
                 self.assets.append(asset)
                 if not asset.assetno:
-                    msg = f"Workorder.make_asset: Asset did not receive assetno, source: {source_no}"
+                    msg = f"Workorder.make_asset: Asset did not receive assetno, source: {seq_no}"
                     raise RuntimeError(msg)
                 return asset.assetno
-        raise ValueError(f"Workorder.make_asset: Unable to find source: {source_no}")
+        raise ValueError(f"Workorder.make_asset: Unable to find source: {seq_no}")
+
+    def sources_to_assets(self) -> None:
+        ready = self.sources_ready()
+        for source in ready:
+            self.make_asset(source.seq_no)
+
+    def update_sources(self) -> None:
+        for asset in self.assets:
+            if not asset.wo_seq:
+                continue
+            for source in self.sources:
+                if source.seq_no != asset.wo_seq:
+                    continue
+                if not asset.assetno:
+                    msg = f"Workorder.update_sources: Asset has no assetno: {asset.specinterface.mpulse_path}"
+                    raise RuntimeError(msg)
+                wo_requests.patch_source(self.wo_no, source.seq_no, [source.patch_op(asset.assetno)])
+                break
     
     def _get_sources(self) -> list[WOSource]:
         asset_dicts: list[dict] | None = self.jdict.get("mo_source")
