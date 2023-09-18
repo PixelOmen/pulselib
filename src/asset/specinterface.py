@@ -35,6 +35,8 @@ class SpecInfo:
         return self.mapping.makejdict(self._format(self.mpulse_value))
 
     def _format(self, value: str | bool) -> str | bool:
+        if not value:
+            return value
         if self.name == "video_bitrate" or self.name == "audio_bitrate":
             return mediaprobe.helpers.format_size(int(value), returnbits=True, returnrate=True)
         return value

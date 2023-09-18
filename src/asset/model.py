@@ -125,7 +125,7 @@ class Asset:
         desc_key = ASSET_FIELD_MAPS["asset_desc"].keys
         jdict[filename_key] = fullpath.name
         jdict[filepath_key] = str(fullpath.parent)
-        jdict[desc_key] = fullpath.name
+        jdict[desc_key] = fullpath.name[:60]
 
         asset_requests.post(jdict, self.specinterface.mpulse_path)
 

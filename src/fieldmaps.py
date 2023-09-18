@@ -128,6 +128,8 @@ class SimpleFieldMap:
     def _jdict_enum(self, value: Any) -> dict[str, Any]:
         if not isinstance(self.keys, list):
             raise ValueError(f"SimpleFieldMap key must be a list of strings: {self.keys}")
+        if not value:
+            return self._jdict_single("", self.keys[0])
         if value not in self.enumdict:
             raise ValueError(f"SimpleFieldMap - {self.name} - enum value not in enumdict: {value}")
         return self._jdict_single(self.enumdict[value], self.keys[0])
