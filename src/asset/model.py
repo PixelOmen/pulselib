@@ -1,6 +1,13 @@
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
+from ..errors import (
+    AssetExistsError,
+    AssetPathNotFoundError,
+    AssetRefreshError,
+    MultipleAssetsFoundError
+)
+
 from . import asset_requests
 from .probe import get_mediainfo
 from .specinterface import SpecInterface
@@ -8,24 +15,6 @@ from .assetfieldmaps import ASSET_FIELD_MAPS, NEW_ASSET_TEMPLATE
 
 if TYPE_CHECKING:
     from mediaprobe import MediaProbe
-
-class AssetPathNotFoundError(LookupError):
-    def __init__(self, origin: str) -> None:
-        super().__init__(f"{origin}: unable to get filepath and/or filename")
-
-class AssetNotFoundError(LookupError):
-    def __init__(self, id: dict | str) -> None:
-        super().__init__(f"Asset not found: {id}")
-
-class AssetExistsError(Exception):
-    def __init__(self, path: str) -> None:
-        super().__init__(f"Asset already exists: {path}")
-
-class MultipleAssetsFoundError(Exception):
-    def __init__(self, query: dict, assetdicts: list[dict]) -> None:
-        self.assetdicts = assetdicts
-        super().__init__(f"Multiple assets found: {query}")
-
 
 class Asset:
     def __init__(self, jdict: dict, specinterface: SpecInterface=...) -> None:
@@ -53,7 +42,7 @@ class Asset:
         else:
             results = self.get_asset()
             if not results:
-                raise AssetNotFoundError(f"Attemped to refresh non-existent asset: {self.specinterface.mpulse_path}")
+                raise AssetRefreshError(self.specinterface.mpulse_path)
             self.jdict = results
             assetno = ASSET_FIELD_MAPS["assetno"].read(results)
             if not assetno:

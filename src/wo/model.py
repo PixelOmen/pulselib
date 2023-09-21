@@ -1,6 +1,7 @@
 from typing import Any
 
-from ..asset import Asset, asset_requests, AssetExistsError
+from ..errors import AssetExistsError
+from ..asset import Asset, asset_requests
 
 from . import wo_requests
 from .sources import WOSource

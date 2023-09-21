@@ -1,16 +1,13 @@
 import json
 import requests
 
+from ..errors import (
+    WorkOrderNotFoundError,
+    WorkOrderUncaughtError
+)
+
 from .. import utils
 from ..config import CONFIG
-
-class WorkOrderNotFoundError(Exception):
-    def __init__(self, wo_num: str):
-        super().__init__(f"wo_requests: Workorder not found: {wo_num}")
-
-class WorkOrderUnknownError(Exception):
-    def __init__(self, wo_num: str | dict, err: str):
-        super().__init__(f"wo_requests: Unknown error - {wo_num} - {err}")
 
 
 def gen_query(wo_num: str) -> str:
@@ -26,7 +23,7 @@ def query(query: dict) -> list[dict]:
     if not isinstance(body, list):
         err = body.get("error")
         if err:
-            raise WorkOrderUnknownError(query, err)
+            raise WorkOrderUncaughtError(query, err)
     return body
         
 
@@ -39,7 +36,7 @@ def get(wo_num: str) -> dict:
         if err.startswith("Alternate key not found:"):
             raise WorkOrderNotFoundError(wo_num)
         else:
-            raise WorkOrderUnknownError(wo_num, err)
+            raise WorkOrderUncaughtError(wo_num, err)
     return body
 
 def patch(wo_no: str, patchlist: list[dict]) -> None:
@@ -53,7 +50,7 @@ def patch(wo_no: str, patchlist: list[dict]) -> None:
             if err.startswith("Alternate key not found:"):
                 raise WorkOrderNotFoundError(wo_no)
             else:
-                raise WorkOrderUnknownError(wo_no, err)
+                raise WorkOrderUncaughtError(wo_no, err)
 
 def patch_source(wo_no: str, seq_no: str, patchlist: list[dict]) -> None:
     url = f"{CONFIG.WO_URL}/wo_no_seq={str(wo_no)}/mo_source/dsp_seq={str(seq_no)}"
@@ -66,4 +63,4 @@ def patch_source(wo_no: str, seq_no: str, patchlist: list[dict]) -> None:
             if err.startswith("Alternate key not found:"):
                 raise WorkOrderNotFoundError(wo_no)
             else:
-                raise WorkOrderUnknownError(wo_no, err)
+                raise WorkOrderUncaughtError(wo_no, err)

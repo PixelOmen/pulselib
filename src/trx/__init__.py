@@ -1,9 +1,6 @@
 from dataclasses import dataclass
 
-class InvalidTransactionError(Exception):
-    def __init__(self, trx: dict) -> None:
-        self.trx = trx
-        super().__init__(f"Invalid Transaction: {trx}")
+from ..errors import TRXUncaughtError
 
 @dataclass()
 class Transaction:
@@ -67,7 +64,7 @@ class Transaction:
                 phase_desc=phase_desc
             )
         except Exception as e:
-            raise InvalidTransactionError(d) from e
+            raise TRXUncaughtError(d) from e
         return obj
 
     def __eq__(self, other: object) -> bool:

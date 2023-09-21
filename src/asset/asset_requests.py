@@ -1,16 +1,10 @@
 import json
 import requests
 
+from ..errors import AssetNotFoundError, AssetUncaughtError
+
 from .. import utils
 from ..config import CONFIG
-
-class AssetNotFoundError(Exception):
-    def __init__(self, assetno: str):
-        super().__init__(f"asset_requests: Asset not found: {assetno}")
-
-class AssetUnknownError(Exception):
-    def __init__(self, assetid: str | dict, err: str):
-        super().__init__(f"asset_requests: Unknown error - {assetid} - {err}")
 
 
 def query(query: dict) -> list[dict]:
@@ -20,7 +14,7 @@ def query(query: dict) -> list[dict]:
     if not isinstance(body, list):
         err = body.get("error")
         if err:
-            raise AssetUnknownError(query, err)
+            raise AssetUncaughtError(query, err)
     return body
 
 def get(assetno: str) -> dict:
@@ -32,7 +26,7 @@ def get(assetno: str) -> dict:
         if err.startswith("Alternate key not found:"):
             raise AssetNotFoundError(assetno)
         else:
-            raise AssetUnknownError(assetno, err)
+            raise AssetUncaughtError(assetno, err)
     return body
 
 def patch(assetno: str, patchlist: list[dict]) -> None:
@@ -46,7 +40,7 @@ def patch(assetno: str, patchlist: list[dict]) -> None:
             if err.startswith("Alternate key not found:"):
                 raise AssetNotFoundError(assetno)
             else:
-                raise AssetUnknownError(assetno, err)
+                raise AssetUncaughtError(assetno, err)
 
 def post(jdict: dict, filename: str) -> None:
     url = f"{CONFIG.ASSET_URL}"
@@ -56,4 +50,4 @@ def post(jdict: dict, filename: str) -> None:
         jbody = json.loads(body)
         err = jbody.get("error")
         if err:
-            raise AssetUnknownError(filename, err)
+            raise AssetUncaughtError(filename, err)

@@ -2,12 +2,11 @@ import json
 import requests
 from datetime import datetime
 
+from ..errors import AlertUncaughtError
+
 from .. import utils
 from ..config import CONFIG
 
-class AlertUnknownError(Exception):
-    def __init__(self, err: str):
-        super().__init__(f"alert_requests: Unknown error - {err}")
 
 def post(jdict: dict) -> None:
     url = f"{CONFIG.ALERT_URL}"
@@ -17,7 +16,7 @@ def post(jdict: dict) -> None:
         jbody = json.loads(body)
         err = jbody.get("error")
         if err:
-            raise AlertUnknownError(err)
+            raise AlertUncaughtError(err)
 
 def simple_alert(to_user: str, note: str, from_user: str=..., date: str=...) -> None:
     if date is ...:
