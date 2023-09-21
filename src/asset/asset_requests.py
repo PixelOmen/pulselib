@@ -57,4 +57,3 @@ def post(jdict: dict, filename: str) -> None:
         err = jbody.get("error")
         if err:
             raise AssetUnknownError(filename, err)
-        
