@@ -41,7 +41,7 @@ class WorkOrder:
     def sources_ready(self) -> list[WOSource]:
         ready_to_create: list[WOSource] = []
         for source in self.sources:
-            if source.created and not source.asset_no and source.filepath and source.filename:
+            if source.created and not source.asset_no and source.fullpath:
                 ready_to_create.append(source)
         return ready_to_create
 
@@ -76,7 +76,7 @@ class WorkOrder:
                 if source.seq_no != asset.wo_seq:
                     continue
                 if not asset.assetno:
-                    msg = f"Workorder.update_sources: Asset has no assetno: {asset.specinterface.mpulse_path}"
+                    msg = f"Workorder.update_sources: Asset has no assetno: {asset.specinterface.path}"
                     raise RuntimeError(msg)
                 wo_requests.patch_source(self.wo_no, source.seq_no, [source.patch_op(asset.assetno)])
                 break

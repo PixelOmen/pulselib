@@ -29,7 +29,7 @@ class Asset:
     @classmethod
     def from_interface(cls, specinterface: SpecInterface) -> "Asset":
         jdict = {}
-        mpulse_path = Path(specinterface.mpulse_path)
+        mpulse_path = Path(specinterface.path)
         filename_key = ASSET_FIELD_MAPS["filename"].keys[0]
         filepath_ley = ASSET_FIELD_MAPS["filepath"].keys[0]
         jdict[filename_key] = mpulse_path.name
@@ -42,22 +42,22 @@ class Asset:
         else:
             results = self.get_asset()
             if not results:
-                raise AssetRefreshError(self.specinterface.mpulse_path)
+                raise AssetRefreshError(self.specinterface.path)
             self.jdict = results
             assetno = ASSET_FIELD_MAPS["assetno"].read(results)
             if not assetno:
-                raise LookupError(f"Unable to get assetno: {self.specinterface.mpulse_path}")
+                raise LookupError(f"Unable to get assetno: {self.specinterface.path}")
             self.assetno = assetno
 
     def file_exists(self, retry: bool=False) -> bool:
         if not retry and self._file_exists is not None:
             return self._file_exists
-        if self.specinterface.mpulse_path:
-            path = Path(self.specinterface.mpulse_path)
+        if self.specinterface.path:
+            path = Path(self.specinterface.path)
         else:
             path = self._get_path()
-        if not path:
-            return False
+            if not path:
+                return False
         try:
             get_mediainfo(str(path))
         except FileNotFoundError:
@@ -70,19 +70,19 @@ class Asset:
         return ASSET_FIELD_MAPS[key].read(self.jdict)
 
     def probefile(self) -> None:
-        if not self.specinterface.mpulse_path:
+        if not self.specinterface.path:
             filepath = self._get_path()
             if not filepath:
                 raise AssetPathNotFoundError("Asset.probe")
-            self.specinterface.mpulse_path = str(filepath)
-        self.probe = get_mediainfo(self.specinterface.mpulse_path)
+            self.specinterface.set_path(str(filepath))
+        self.probe = get_mediainfo(self.specinterface.path)
         self.specinterface.probefile(self.probe)
         self._wasprobed = True
         self._file_exists = True
 
     def patch(self) -> None:
         if not self.assetno:
-            raise RuntimeError(f"Attemped to patch asset w/o assetno: {self.specinterface.mpulse_path}")
+            raise RuntimeError(f"Attemped to patch asset w/o assetno: {self.specinterface.path}")
         if not self._wasprobed:
             self.probefile()
         patches = []
@@ -93,12 +93,12 @@ class Asset:
 
     def post_new(self) -> None:
         if self.assetno:
-            raise AssetExistsError(f"Assetno: {self.assetno} - {self.specinterface.mpulse_path}")
+            raise AssetExistsError(f"Assetno: {self.assetno} - {self.specinterface.path}")
         else:
             exists = self.get_asset()
             if exists:
                 assetno = ASSET_FIELD_MAPS["assetno"].read(exists)
-                raise AssetExistsError(f"Assetno: {assetno} - {self.specinterface.mpulse_path}")
+                raise AssetExistsError(f"Assetno: {assetno} - {self.specinterface.path}")
             
         if not self._wasprobed:
             self.probefile()
@@ -108,7 +108,7 @@ class Asset:
             jdict.update(specinfo.makejdict())
         jdict.update(NEW_ASSET_TEMPLATE)
 
-        fullpath = Path(self.specinterface.mpulse_path)
+        fullpath = Path(self.specinterface.path)
         filename_key = ASSET_FIELD_MAPS["filename"].keys
         filepath_key = ASSET_FIELD_MAPS["filepath"].keys
         desc_key = ASSET_FIELD_MAPS["asset_desc"].keys
@@ -116,20 +116,20 @@ class Asset:
         jdict[filepath_key] = str(fullpath.parent)
         jdict[desc_key] = fullpath.name[:60]
 
-        asset_requests.post(jdict, self.specinterface.mpulse_path)
+        asset_requests.post(jdict, self.specinterface.path)
 
     def get_asset(self) -> dict:
         filename_key = ASSET_FIELD_MAPS["filename"].keys
         filepath_key = ASSET_FIELD_MAPS["filepath"].keys
-        if self.specinterface.mpulse_path:
-            mpulse_path = Path(self.specinterface.mpulse_path)
+        if self.specinterface.path:
+            mpulse_path = Path(self.specinterface.path)
             filename = mpulse_path.name
             filepath = str(mpulse_path.parent)
             query = {filename_key: filename, filepath_key: filepath}
         else:
             fullpath = self._get_path()
             if not fullpath:
-                raise AssetPathNotFoundError(f"Asset._find_asset: {self.assetno} - {self.specinterface.mpulse_path}")
+                raise AssetPathNotFoundError(f"Asset._find_asset: {self.assetno} - {self.specinterface.path}")
             query = {filename_key: fullpath.name, filepath_key: str(fullpath.parent)}
 
         results = asset_requests.query(query)

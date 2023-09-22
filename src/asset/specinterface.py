@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 import tclib3
 import mediaprobe
 from mediaprobe import MediaProbe
+from rosettapath import RosettaPath
 
 from .assetfieldmaps import ASSET_FIELD_MAPS
 
@@ -112,8 +113,8 @@ SPEC_PROBE_MAP_COMPLEX: list[str] = [
 # May need to add handling for this error:
 # "error": "A matching value could not be found for the custom dropdown field REI_field_19; Value: 42 bit.\r\n"
 class SpecInterface:
-    def __init__(self, mpulse_path: str):
-        self.mpulse_path = mpulse_path
+    def __init__(self, path: str):
+        self.path = RosettaPath(path.replace("\"", "")).linux_path()
         self.all: list[SpecInfo] = self._create_specinfo()
         self.found: list[SpecInfo] = []
         self.notfound: list[SpecInfo] = []
@@ -122,6 +123,9 @@ class SpecInterface:
     @property
     def isprobed(self) -> bool:
         return self._isprobed
+
+    def set_path(self, path: str) -> None:
+        self.path = RosettaPath(path.replace("\"", "")).linux_path()
 
     def probefile(self, probe: "MediaProbe") -> None:
         for method in self.all:

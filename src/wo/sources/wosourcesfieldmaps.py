@@ -7,5 +7,6 @@ WOSOURCES_FIELD_MAPS = {
     "asset_no": SimpleFieldMap("asset_no", FieldTypeEnum.DICT, ["master_no", "master_no"]),
     "filepath": SimpleFieldMap("filepath", FieldTypeEnum.STRING, "WOS_field_1"),
     "filename": SimpleFieldMap("filename", FieldTypeEnum.STRING, "WOS_field_2"),
+    "fullpath": SimpleFieldMap("filename", FieldTypeEnum.STRING, "WOS_field_4"),
     "created": SimpleFieldMap("created", FieldTypeEnum.CHECKMARK, "WOS_field_3")
 }
