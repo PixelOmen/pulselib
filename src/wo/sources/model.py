@@ -28,5 +28,9 @@ class WOSource:
         specinterface = SpecInterface(self.fullpath)
         return Asset.from_interface(specinterface)
 
-    def patch_op(self, assetno: str) -> dict:
-        return self.fieldmaps["asset_no"].patch_op(assetno)
+    def patch_op(self, assetno: str) -> list[dict]:
+        ops = []
+        linux_path = SpecInterface(self.fullpath).path
+        ops.append(self.fieldmaps["asset_no"].patch_op(assetno))
+        ops.append(self.fieldmaps["fullpath"].patch_op(linux_path))
+        return ops

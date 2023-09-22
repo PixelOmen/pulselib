@@ -78,7 +78,7 @@ class WorkOrder:
                 if not asset.assetno:
                     msg = f"Workorder.update_sources: Asset has no assetno: {asset.specinterface.path}"
                     raise RuntimeError(msg)
-                wo_requests.patch_source(self.wo_no, source.seq_no, [source.patch_op(asset.assetno)])
+                wo_requests.patch_source(self.wo_no, source.seq_no, source.patch_op(asset.assetno))
                 break
     
     def _get_sources(self) -> list[WOSource]:

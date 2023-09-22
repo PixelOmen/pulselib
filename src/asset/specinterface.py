@@ -114,7 +114,8 @@ SPEC_PROBE_MAP_COMPLEX: list[str] = [
 # "error": "A matching value could not be found for the custom dropdown field REI_field_19; Value: 42 bit.\r\n"
 class SpecInterface:
     def __init__(self, path: str):
-        self.path = RosettaPath(path.replace("\"", "")).linux_path()
+        self.path: str
+        self.set_path(path)
         self.all: list[SpecInfo] = self._create_specinfo()
         self.found: list[SpecInfo] = []
         self.notfound: list[SpecInfo] = []
