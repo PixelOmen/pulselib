@@ -19,4 +19,7 @@ def get_mediainfo(file: str) -> MediaProbe:
         else:
             raise LookupError(err)
     mi = resjson["output"]["mediainfo"]
-    return MediaProbe(file, jsondict=mi)
+    linuxpath = resjson["output"]["linuxpath"]
+    probe = MediaProbe(file, jsondict=mi)
+    probe.filepath = linuxpath
+    return probe
