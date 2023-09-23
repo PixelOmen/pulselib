@@ -126,6 +126,9 @@ class SpecInterface:
         return self._isprobed
 
     def set_path(self, path: str) -> None:
+        if not path:
+            self.path = ""
+            return
         self.path = RosettaPath(path.replace("\"", "")).linux_path()
 
     def probefile(self, probe: "MediaProbe") -> None:

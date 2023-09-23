@@ -17,6 +17,20 @@ if TYPE_CHECKING:
     from mediaprobe import MediaProbe
 
 class Asset:
+    @staticmethod
+    def _set_path_from_interface(jdict: dict, interface: SpecInterface) -> None:
+        path = Path(interface.path)
+        filename_key = ASSET_FIELD_MAPS["filename"].keys[0]
+        filepath_key = ASSET_FIELD_MAPS["filepath"].keys[0]
+        jdict[filename_key] = path.name
+        jdict[filepath_key] = str(path.parent)
+
+    @classmethod
+    def from_interface(cls, specinterface: SpecInterface) -> "Asset":
+        jdict = {}
+        cls._set_path_from_interface(jdict, specinterface)
+        return cls(jdict, specinterface)
+    
     def __init__(self, jdict: dict, specinterface: SpecInterface=...) -> None:
         self.jdict = jdict
         self.specinterface = SpecInterface("") if specinterface is ... else specinterface
@@ -26,15 +40,15 @@ class Asset:
         self._wasprobed = False
         self._file_exists: bool | None = None
 
-    @classmethod
-    def from_interface(cls, specinterface: SpecInterface) -> "Asset":
-        jdict = {}
-        mpulse_path = Path(specinterface.path)
-        filename_key = ASSET_FIELD_MAPS["filename"].keys[0]
-        filepath_ley = ASSET_FIELD_MAPS["filepath"].keys[0]
-        jdict[filename_key] = mpulse_path.name
-        jdict[filepath_ley] = str(mpulse_path.parent)
-        return cls(jdict, specinterface)
+    def set_path(self, path: str) -> None:
+        self.specinterface.set_path(path)
+        self._set_path_from_interface(self.jdict, self.specinterface)
+
+    def get_path(self) -> Path | None:
+        if self.specinterface.path:
+            return Path(self.specinterface.path)
+        else:
+            return self._get_path()
 
     def refresh(self) -> None:
         if self.assetno:
