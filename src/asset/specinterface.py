@@ -41,7 +41,7 @@ class SpecInfo:
         if self.name == "video_bitrate" or self.name == "audio_bitrate":
             return mediaprobe.helpers.format_size(int(value), returnbits=True, returnrate=True)
         if self.name == "filesize":
-            return mediaprobe.helpers.format_size(int(value), returnbits=False, returnrate=False)
+            return mediaprobe.helpers.format_size(int(value), roundtoint=False)
         return value
 
 BITDEPTH_DICT: dict[str, str] = {

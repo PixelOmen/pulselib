@@ -1,4 +1,5 @@
 from typing import Any
+from dataclasses import dataclass
 
 from ..errors import AssetExistsError
 from ..asset import Asset, asset_requests
@@ -6,6 +7,11 @@ from ..asset import Asset, asset_requests
 from . import wo_requests
 from .sources import WOSource
 from .wofieldmaps import WO_FIELD_MAPS
+
+@dataclass
+class UpdateResults:
+    updated: list[str]
+    errors: list[str]
 
 class WorkOrder:
     def __init__(self, jdict: dict) -> None:
@@ -68,18 +74,27 @@ class WorkOrder:
         for source in ready:
             self.make_asset(source.seq_no)
 
-    def update_sources(self) -> None:
+    def update_sources(self) -> UpdateResults:
+        updated = []
+        errors = []
         for asset in self.assets:
             if not asset.wo_seq:
                 continue
             for source in self.sources:
                 if source.seq_no != asset.wo_seq:
                     continue
-                if not asset.assetno:
-                    msg = f"Workorder.update_sources: Asset has no assetno: {asset.specinterface.path}"
-                    raise RuntimeError(msg)
-                wo_requests.patch_source(self.wo_no, source.seq_no, source.patch_op(asset.assetno))
-                break
+                try:
+                    if not asset.assetno:
+                        msg = f"Workorder.update_sources: Asset has no assetno: {asset.specinterface.path}"
+                        raise RuntimeError(msg)
+                    wo_requests.patch_source(self.wo_no, source.seq_no, source.patch_op(asset.assetno))
+                except Exception as e:
+                    errors.append(f"{type(e).__name__}: {e}")
+                else:
+                    updated.append(asset.specinterface.path)
+                finally:
+                    break
+        return UpdateResults(updated, errors)
     
     def _get_sources(self) -> list[WOSource]:
         asset_dicts: list[dict] | None = self.jdict.get("mo_source")
