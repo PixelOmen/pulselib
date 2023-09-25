@@ -40,6 +40,8 @@ class SpecInfo:
             return value
         if self.name == "video_bitrate" or self.name == "audio_bitrate":
             return mediaprobe.helpers.format_size(int(value), returnbits=True, returnrate=True)
+        if self.name == "filesize":
+            return mediaprobe.helpers.format_size(int(value), returnbits=False, returnrate=False)
         return value
 
 BITDEPTH_DICT: dict[str, str] = {
@@ -82,6 +84,7 @@ MATRIX_DICT: dict[str, str] = {
 
 
 SPEC_PROBE_MAP_SIMPLE: dict[str, tuple[str, str]] = {
+    "filesize": ("General", "FileSize"),
     "chroma_sub": ("Video", "ChromaSubsampling"),
     "frame_rate": ("Video", "FrameRate"),
     "scan_type": ("Video", "ScanType"),

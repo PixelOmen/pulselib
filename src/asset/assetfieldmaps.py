@@ -48,6 +48,7 @@ ASSET_FIELD_MAPS = {
     "asset_desc": SimpleFieldMap("asset_desc", FieldTypeEnum.STRING, "master_desc"),
     "filename": SimpleFieldMap("filename", FieldTypeEnum.STRING, "REI_field_9"),
     "filepath": SimpleFieldMap("filepath", FieldTypeEnum.STRING, "REI_field_29"),
+    "filesize": SimpleFieldMap("filesize", FieldTypeEnum.STRING, "REI_field_30"),
     "container": SimpleFieldMap("container", FieldTypeEnum.STRING, "REI_field_28"),
     "length": SimpleFieldMap("length", FieldTypeEnum.STRING, "REI_field_21"),
     "resolution": SimpleFieldMap("resolution", FieldTypeEnum.MPULSE_ENUM, ["format_size_no", "format_size_desc"], enumdict=RESOLUTION_ENUM),
