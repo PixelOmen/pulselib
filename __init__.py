@@ -1,3 +1,12 @@
+import rosettapath
+
+if "mediapulse" not in rosettapath.INPUT_MOUNT_PATTERNS:
+    rosettapath.INPUT_MOUNT_PATTERNS["mediapulse"] = r"^\\\\sanviewer"
+    rosettapath.INPUT_MOUNT_PATTERNS["mediapulse_forward"] = r"^//sanviewer"
+    rosettapath.INPUT_MOUNT_PATTERNS["mediapulse_noslash"] = r"^sanviewer"
+
+from rosettapath import RosettaPath
+
 from .src import utils
 from .src import asset
 from .src import errors

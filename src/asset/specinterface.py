@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 import tclib3
 import mediaprobe
 from mediaprobe import MediaProbe
-from rosettapath import RosettaPath
 
+from ... import RosettaPath
 from .assetfieldmaps import ASSET_FIELD_MAPS
 
 if TYPE_CHECKING:
