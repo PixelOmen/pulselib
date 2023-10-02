@@ -11,6 +11,10 @@ class AssetUncaughtError(Exception):
     def __init__(self, assetid: str | dict, err: str):
         super().__init__(f"asset_requests: Uncaught error - {assetid} - {err}")
 
+class AssetAudioUncaughtError(Exception):
+    def __init__(self, assetid: str | dict, err: str):
+        super().__init__(f"asset_requests: Uncaught error - {assetid} - {err}")
+
 class AssetPathNotFoundError(LookupError):
     def __init__(self, origin: str) -> None:
         super().__init__(f"{origin}: unable to get filepath and/or filename")
