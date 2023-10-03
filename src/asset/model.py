@@ -8,8 +8,8 @@ from ..errors import (
     MultipleAssetsFoundError
 )
 
-from . import asset_requests
 from .probe import get_mediainfo
+from . import asset_requests, audio
 from .specinterface import SpecInterface
 from .assetfieldmaps import ASSET_FIELD_MAPS, NEW_ASSET_TEMPLATE
 
@@ -36,7 +36,7 @@ class Asset:
         self.specinterface = SpecInterface("") if specinterface is ... else specinterface
         self.assetno: str | None = ASSET_FIELD_MAPS["assetno"].read(self.jdict)
         self.probe: MediaProbe | None = None
-        self.wo_seq: str = ""
+        self.wo_seq: int | None = None
         self._wasprobed = False
         self._file_exists: bool | None = None
 
@@ -99,13 +99,9 @@ class Asset:
             raise RuntimeError(f"Attemped to patch asset w/o assetno: {self.specinterface.path}")
         if not self._wasprobed:
             self.probefile()
-        patches = []
-        for specinfo in self.specinterface.all:
-            patches.append(specinfo.patch_op())
-        if patches:
-            asset_requests.patch(self.assetno, patches)
+        asset_requests.patch(self.assetno, self.specinterface.patch_ops())
 
-    def post_new(self) -> None:
+    def post_new(self, audiolayout: bool=True) -> None:
         if self.assetno:
             raise AssetExistsError(f"Assetno: {self.assetno} - {self.specinterface.path}")
         else:
@@ -117,20 +113,18 @@ class Asset:
         if not self._wasprobed:
             self.probefile()
 
-        jdict = {}
-        for specinfo in self.specinterface.all:
-            jdict.update(specinfo.makejdict())
+        jdict = self.specinterface.makejdict()
         jdict.update(NEW_ASSET_TEMPLATE)
 
         fullpath = Path(self.specinterface.path)
-        filename_key = ASSET_FIELD_MAPS["filename"].keys
-        filepath_key = ASSET_FIELD_MAPS["filepath"].keys
-        desc_key = ASSET_FIELD_MAPS["asset_desc"].keys
-        jdict[filename_key] = fullpath.name
-        jdict[filepath_key] = str(fullpath.parent)
-        jdict[desc_key] = fullpath.name[:60]
+        jdict.update(ASSET_FIELD_MAPS["filename"].makejdict(fullpath.name))
+        jdict.update(ASSET_FIELD_MAPS["filepath"].makejdict(str(fullpath.parent)))
+        jdict.update(ASSET_FIELD_MAPS["asset_desc"].makejdict(fullpath.name[:60]))
 
         asset_requests.post(jdict, self.specinterface.path)
+
+        if audiolayout:
+            self._audio()
 
     def get_asset(self) -> dict:
         filename_key = ASSET_FIELD_MAPS["filename"].keys
@@ -151,7 +145,16 @@ class Asset:
             raise MultipleAssetsFoundError(query, results)
         elif len(results) < 1:
             return {}
-        return results[0]            
+        return results[0]
+    
+    def _audio(self) -> None:
+        self.refresh()
+        if not self.assetno:
+            raise AssetRefreshError(f"Asset._audio: Unable to get assetno after refresh: {self.specinterface.path}")
+        if not self.probe:
+            raise AssetRefreshError(f"Asset._audio: Unable to get probe after refresh: {self.specinterface.path}")
+        audiolayout = audio.asset_audio_dict(self.assetno, self.probe)
+        asset_requests.post_audio(self.assetno, audiolayout)
 
     def _get_path(self) -> Path | None:
         try:

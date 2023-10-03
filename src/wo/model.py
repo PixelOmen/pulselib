@@ -51,22 +51,23 @@ class WorkOrder:
                 ready_to_create.append(source)
         return ready_to_create
 
-    def make_asset(self, seq_no: str, use_existing: bool=True) -> str:
+    def make_asset(self, seq_no: int, use_existing: bool=True, force: bool=False) -> str:
         for source in self.sources:
-            if source.seq_no == seq_no:
-                asset = source.new_asset()
-                try:
-                    asset.post_new()
-                except AssetExistsError as e:
-                    if not use_existing:
-                        raise e
-                asset.refresh()
-                asset.wo_seq = source.seq_no
-                self.assets.append(asset)
-                if not asset.assetno:
-                    msg = f"Workorder.make_asset: Asset did not receive assetno, source: {seq_no}"
-                    raise RuntimeError(msg)
-                return asset.assetno
+            if source.seq_no != seq_no:
+                continue
+            asset = source.new_asset(force=force)
+            try:
+                asset.post_new()
+            except AssetExistsError as e:
+                if not use_existing:
+                    raise e
+            asset.refresh()
+            asset.wo_seq = source.seq_no
+            self.assets.append(asset)
+            if not asset.assetno:
+                msg = f"Workorder.make_asset: Asset did not receive assetno, source: {seq_no}"
+                raise RuntimeError(msg)
+            return asset.assetno
         raise ValueError(f"Workorder.make_asset: Unable to find source: {seq_no}")
 
     def sources_to_assets(self) -> None:

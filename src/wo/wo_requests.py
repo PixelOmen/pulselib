@@ -52,7 +52,7 @@ def patch(wo_no: str, patchlist: list[dict]) -> None:
             else:
                 raise WorkOrderUncaughtError(wo_no, err)
 
-def patch_source(wo_no: str, seq_no: str, patchlist: list[dict]) -> None:
+def patch_source(wo_no: str, seq_no: int, patchlist: list[dict]) -> None:
     url = f"{CONFIG.WO_URL}/wo_no_seq={str(wo_no)}/mo_source/dsp_seq={str(seq_no)}"
     r = requests.patch(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD), json=patchlist)
     body = utils.verify_response(url=url, response=r)

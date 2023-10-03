@@ -7,6 +7,7 @@ import mediaprobe
 from mediaprobe import MediaProbe
 
 from ... import RosettaPath
+
 from .assetfieldmaps import ASSET_FIELD_MAPS
 
 if TYPE_CHECKING:
@@ -122,7 +123,6 @@ class SpecInterface:
         self.all: list[SpecInfo] = self._create_specinfo()
         self.found: list[SpecInfo] = []
         self.notfound: list[SpecInfo] = []
-        self.audio: list[dict] = []
         self._isprobed = False
 
     @property
@@ -156,7 +156,15 @@ class SpecInterface:
     def patch_ops(self) -> list[dict]:
         if not self.isprobed:
             raise RuntimeError("SpecInterface.patch_ops: probe() must be called before patch_ops()")
-        return [specinfo.patch_op() for specinfo in self.found]
+        return [specinfo.patch_op() for specinfo in self.all]
+
+    def makejdict(self) -> dict:
+        if not self.isprobed:
+            raise RuntimeError("SpecInterface.makejdict: probe() must be called before makejdict()")
+        jdict = {}
+        for specinfo in self.all:
+            jdict.update(specinfo.makejdict())
+        return jdict
 
     def _create_specinfo(self) -> list[SpecInfo]:
         simple_map = [SpecInfo(spec, *SPEC_PROBE_MAP_SIMPLE[spec], probetype="simple") for spec in SPEC_PROBE_MAP_SIMPLE]

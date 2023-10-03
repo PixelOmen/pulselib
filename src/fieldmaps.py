@@ -6,6 +6,7 @@ class FieldTypeEnum:
     CHECKMARK = 2
     MPULSE_ENUM = 3
     DICT = 4
+    LIST = 5
 
     def __init__(self):
         raise NotImplementedError("FieldTypeEnum cannot be instantiated")
@@ -31,7 +32,7 @@ class SimpleFieldMap:
 
     def read(self, jdict: dict[str, Any]) -> Any:
         match self.ftype:
-            case FieldTypeEnum.STRING | FieldTypeEnum.NUMBER:
+            case FieldTypeEnum.STRING | FieldTypeEnum.NUMBER | FieldTypeEnum.LIST:
                 return self._read_single(jdict)
             case FieldTypeEnum.CHECKMARK:
                 value = self._read_single(jdict)
@@ -62,7 +63,7 @@ class SimpleFieldMap:
 
     def makejdict(self, value: Any) -> dict[str, Any]:
         match self.ftype:
-            case FieldTypeEnum.STRING | FieldTypeEnum.NUMBER:
+            case FieldTypeEnum.STRING | FieldTypeEnum.NUMBER | FieldTypeEnum.LIST:
                 return self._jdict_single(value)
             case FieldTypeEnum.CHECKMARK:
                 return self._jdict_single("Y" if value else "N")

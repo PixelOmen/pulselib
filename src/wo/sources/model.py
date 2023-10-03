@@ -9,7 +9,7 @@ class WOSource:
     def __init__(self, jdict: dict) -> None:
         self.jdict = jdict
         self.fieldmaps = WOSOURCES_FIELD_MAPS
-        self.seq_no: str = self.find_key("seq_no")
+        self.seq_no: int = self.find_key("seq_no")
         self.source_no: str = self.find_key("source_no")
         self.fullpath: str = self.find_key("fullpath")
         self.asset_no: str = self.find_key("asset_no")
@@ -20,10 +20,10 @@ class WOSource:
     def find_key(self, key: str) -> Any:
         return self.fieldmaps[key].read(self.jdict)
 
-    def new_asset(self) -> Asset:
+    def new_asset(self, force: bool=False) -> Asset:
         if not self.fullpath:
             raise LookupError(f"Unable to get path from wosource: {self.source_no}")
-        if not self.created:
+        if not self.created and not force:
             raise ValueError(f"Source {self.source_no} has not been created")
         specinterface = SpecInterface(self.fullpath)
         return Asset.from_interface(specinterface)
