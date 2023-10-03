@@ -122,6 +122,7 @@ class SpecInterface:
         self.all: list[SpecInfo] = self._create_specinfo()
         self.found: list[SpecInfo] = []
         self.notfound: list[SpecInfo] = []
+        self.audio: list[dict] = []
         self._isprobed = False
 
     @property
