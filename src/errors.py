@@ -34,6 +34,15 @@ class MultipleAssetsFoundError(Exception):
         super().__init__(f"Multiple assets found: {query}")
 
 
+class ResourceUncaughtError(Exception):
+    def __init__(self, res_no: str | dict, err: str):
+        super().__init__(f"asset_requests: Uncaught error - {res_no} - {err}")
+
+class ResourceNotFoundError(Exception):
+    def __init__(self, res_no: str):
+        super().__init__(f"asset_requests: Asset not found: {res_no}")
+
+
 class TRXUncaughtError(Exception):
     def __init__(self, trx: dict) -> None:
         self.trx = trx

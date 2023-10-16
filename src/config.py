@@ -11,6 +11,9 @@ class Config:
     ASSET_QUERY_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMasterList"
     ASSET_SESSION_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMaster_ImSession_Related"
     ALERT_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/XeAlert"
+    RESOURCE_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchResource"
+    RESOURCE_QUERY_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchResourceList"
+    QUALIFICATION_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchQualification"
     MEDIAINFO_URL = "http://10.0.20.96:PORT/api/probe"
     MI_DEBUG: bool=False
     MP_DEBUG: bool=False
@@ -31,6 +34,9 @@ class Config:
         cls.ASSET_SESSION_URL = cls.ASSET_SESSION_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.ASSET_QUERY_URL = cls.ASSET_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.ALERT_URL = cls.ALERT_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
+        cls.RESOURCE_URL = cls.RESOURCE_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
+        cls.RESOURCE_QUERY_URL = cls.RESOURCE_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
+        cls.QUALIFICATION_URL = cls.QUALIFICATION_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.MEDIAINFO_URL = cls.MEDIAINFO_URL.replace("PORT", mi_port)
 
 Config.init_urls()
