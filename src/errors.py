@@ -38,6 +38,10 @@ class ResourceUncaughtError(Exception):
     def __init__(self, res_no: str | dict, err: str):
         super().__init__(f"asset_requests: Uncaught error - {res_no} - {err}")
 
+class ResourceExistsError(Exception):
+    def __init__(self, res_no: str | dict, err: str):
+        super().__init__(f"asset_requests: Uncaught error - {res_no} - {err}")
+
 class ResourceNotFoundError(Exception):
     def __init__(self, res_no: str):
         super().__init__(f"asset_requests: Asset not found: {res_no}")

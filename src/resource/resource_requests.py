@@ -1,7 +1,7 @@
 import json
 import requests
 
-from ..errors import ResourceUncaughtError, ResourceNotFoundError
+from ..errors import ResourceUncaughtError, ResourceNotFoundError, ResourceExistsError
 
 from .. import utils
 from ..config import CONFIG
@@ -51,7 +51,10 @@ def post(jdict: dict) -> None:
         jbody = json.loads(body)
         err = jbody.get("error")
         if err:
-            raise ResourceUncaughtError(jdict, err)
+            if "already exists" in err:
+                raise ResourceExistsError(jdict, err)
+            else:
+                raise ResourceUncaughtError(jdict, err)
 
 
 def query_qualifications(query: dict | None = None) -> list[dict]:
@@ -97,3 +100,17 @@ def post_qualification(jdict: dict) -> None:
         err = jbody.get("error")
         if err:
             raise ResourceUncaughtError(jdict, err)
+
+def add_qual_to_resource(res_code: str, qual_no: str) -> None:
+    jdict = [{
+        "resource_code": res_code,
+        "qualification_no": qual_no
+    }]
+    url = f"{CONFIG.RESOURCE_URL}/resource_code={res_code}/sch_resource_qual"
+    r = requests.post(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD), json=jdict)
+    body = utils.verify_response(url=url, response=r)
+    if body:
+        jbody = json.loads(body)
+        err = jbody.get("error")
+        if err:
+            raise ResourceUncaughtError(res_code, err)
