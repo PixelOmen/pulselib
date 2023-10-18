@@ -28,23 +28,51 @@ class Linguist(Resource):
     fieldmaps: dict[str, "SimpleFieldMap"] = field(init=False)
 
     def __post_init__(self):
-        self.name = self.name.strip()
+        self.name = self._cleanup_name(self.name)
         self.phone = ""
         self.fieldmaps = LINGUIST_MAPS
+        self.qcrate = self.qcrate.strip()[:127]
+        self.transrate = self.transrate.strip()[:127]
         self._set_code()
         self._cleanup_email()
 
+    def _cleanup_name(self, name: str) -> str:
+        name = name.strip()
+        clean = ""
+        in_para = False
+        for char in name:
+            if char == "(":
+                in_para = True
+            elif char == ")":
+                in_para = False
+            elif not in_para:
+                clean += char
+        return clean.strip()
+
+    def _is_clean_name(self, name: str) -> bool:
+        if len(name) == 2:
+            return False
+        if "(" in name or ")" in name:
+            return False
+        return True
+
     def _set_code(self):
-        split_name = self.name.split(" ")
-        if len(split_name) < 2:
-            self.code = self.name.upper()
-        elif "(" in split_name[1]:
-            self.code = split_name[0].upper()
+        clean_name = self.name.replace(".", "").replace(",", "").replace("'", "").replace("\"", "").strip()
+        split_name = clean_name.split(" ")
+        clean_split_name = [part for part in split_name if self._is_clean_name(part)]
+        if not clean_split_name:
+            raise ValueError(f"Unable to generate code: {self.name}")
+        try:
+            if len(clean_split_name) < 2:
+                self.code = clean_split_name[0].upper()
+            elif len(clean_split_name) > 2:
+                self.code = clean_split_name[0][:3].upper() + clean_split_name[0][0].upper() + clean_split_name[-1].upper()
+            else:
+                self.code = clean_split_name[0][:3].upper() + clean_split_name[1].upper()
+        except IndexError:
+            raise ValueError(f"Unable to split: {clean_name}")
         else:
-            try:
-                self.code = split_name[0][0].upper() + split_name[1].upper()
-            except IndexError:
-                raise ValueError(f"Unable to split: {self.name}")
+            self.code = self.code[:8]
 
     def _cleanup_email(self):
         stripped_text = self.email.strip()
