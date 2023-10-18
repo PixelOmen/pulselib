@@ -30,8 +30,8 @@ def get(assetno: str) -> dict:
             raise ResourceUncaughtError(assetno, err)
     return body
 
-def patch(assetno: str, patchlist: list[dict]) -> None:
-    url = f"{CONFIG.RESOURCE_URL}/resource_code={str(assetno)}"
+def patch(resource_code: str, patchlist: list[dict]) -> None:
+    url = f"{CONFIG.RESOURCE_URL}/resource_code={str(resource_code)}"
     r = requests.patch(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD), json=patchlist)
     body = utils.verify_response(url=url, response=r)
     if body:
@@ -39,9 +39,9 @@ def patch(assetno: str, patchlist: list[dict]) -> None:
         err = jbody.get("error")
         if err:
             if err.startswith("Alternate key not found:"):
-                raise ResourceNotFoundError(assetno)
+                raise ResourceNotFoundError(resource_code)
             else:
-                raise ResourceUncaughtError(assetno, err)
+                raise ResourceUncaughtError(resource_code, err)
 
 def post(jdict: dict) -> None:
     url = f"{CONFIG.RESOURCE_URL}"
