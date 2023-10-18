@@ -97,6 +97,7 @@ class Linguist(Resource):
         #         }
         #     ]
         # }
+        self.languages = list(set(self.languages))
         qualifications = {}
         qualifications["sch_resource_qual"] = []
         dsp = 1
