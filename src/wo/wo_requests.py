@@ -19,7 +19,6 @@ def query(query: dict) -> list[dict]:
     url = f"{CONFIG.WO_QUERY_URL}/?query={query}"
     r = requests.get(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD))
     body = json.loads(utils.verify_response(url=url, response=r))
-    body = json.loads(utils.verify_response(url=url, response=r))
     if not isinstance(body, list):
         err = body.get("error")
         if err:
