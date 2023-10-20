@@ -47,7 +47,8 @@ class Linguist(Resource):
                 in_para = False
             elif not in_para:
                 clean += char
-        return clean.strip()
+        clean = clean.strip()
+        return clean.replace("?", "")
 
     def _is_clean_name(self, name: str) -> bool:
         if len(name) == 2:
@@ -132,3 +133,6 @@ class Linguist(Resource):
         if not jdict_only:
             resource_requests.post(jdict)
         return jdict
+    
+    def add_to_group(self, group_code: str, isdefault: bool = True) -> None:
+        resource_requests.post_resource_to_group(group_code, self.code, isdefault=isdefault)

@@ -114,3 +114,31 @@ def add_qual_to_resource(res_code: str, qual_no: str) -> None:
         err = jbody.get("error")
         if err:
             raise ResourceUncaughtError(res_code, err)
+
+def get_group_resources(group_code: str) -> list[dict]:
+    url = f"{CONFIG.SCHGROUP_URL}/group_code={group_code}/sch_group_resource"
+    r = requests.get(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD))
+    body = json.loads(utils.verify_response(url=url, response=r))
+    if not isinstance(body, list):
+        err = body.get("error")
+        if err:
+            raise ResourceUncaughtError(f"{group_code}", err)
+    return body
+        
+def post_resource_to_group(group_code: str, resource_code: str, isdefault: bool = True) -> None:
+    isdefault_str = "Y" if isdefault else "N"
+    payload = [{
+        "group_code": group_code,
+        "default_group": isdefault_str,
+        "resource_code": {
+            "resource_code": resource_code
+        }
+    }]
+    url = f"{CONFIG.SCHGROUP_URL}/group_code={group_code}/sch_group_resource"
+    r = requests.post(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD), json=payload)
+    body = utils.verify_response(url=url, response=r)
+    if body:
+        jbody = json.loads(body)
+        err = jbody.get("error")
+        if err:
+            raise ResourceUncaughtError(f"{group_code}", err)

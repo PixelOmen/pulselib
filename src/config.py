@@ -13,6 +13,7 @@ class Config:
     ALERT_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/XeAlert"
     RESOURCE_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchResource"
     RESOURCE_QUERY_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchResourceList"
+    SCHGROUP_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchGroup"
     QUALIFICATION_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchQualification"
     MEDIAINFO_URL = "http://10.0.20.96:PORT/api/probe"
     MI_DEBUG: bool=False
@@ -36,6 +37,7 @@ class Config:
         cls.ALERT_URL = cls.ALERT_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.RESOURCE_URL = cls.RESOURCE_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.RESOURCE_QUERY_URL = cls.RESOURCE_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
+        cls.SCHGROUP_URL = cls.SCHGROUP_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.QUALIFICATION_URL = cls.QUALIFICATION_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.MEDIAINFO_URL = cls.MEDIAINFO_URL.replace("PORT", mi_port)
 
