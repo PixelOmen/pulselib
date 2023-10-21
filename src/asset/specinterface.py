@@ -253,7 +253,7 @@ class SpecInterface:
         fps_int = round(float(fps_str))
         hrminsec = [0, 0, float(duration)]
         frames = tclib3.ms_to_frames(hrminsec, fps_int, hrminsec=True)
-        specinfo.mpulse_value = tclib3.frames_to_tc(frames-1, fps_int, self._is_df(probe))
+        specinfo.mpulse_value = tclib3.frames_to_tc(frames-1, float(fps_str), self._is_df(probe))
         self._add_found(specinfo)
 
     def _resolution_spec(self, specinfo: SpecInfo, probe: "MediaProbe") -> None:

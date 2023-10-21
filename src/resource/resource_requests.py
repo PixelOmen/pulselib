@@ -142,3 +142,13 @@ def post_resource_to_group(group_code: str, resource_code: str, isdefault: bool 
         err = jbody.get("error")
         if err:
             raise ResourceUncaughtError(f"{group_code}", err)
+
+def patch_groupresource(groupcode: str, resource_code: str, patchlist: list[dict]) -> None:
+    url = f"{CONFIG.SCHGROUP_URL}/group_code={str(groupcode)}/sch_group_resource/resource_code={str(resource_code)}"
+    r = requests.patch(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD), json=patchlist)
+    body = utils.verify_response(url=url, response=r)
+    if body:
+        jbody = json.loads(body)
+        err = jbody.get("error")
+        if err:
+            raise ResourceUncaughtError(f"{groupcode} - {resource_code}: ", err)
