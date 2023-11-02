@@ -29,7 +29,7 @@ def _is_recent_session(sessiondict: dict) -> bool:
     now = datetime.now()
     diff_minus = now - timedelta(minutes=2)
     diff_plus = now + timedelta(minutes=2)
-    return diff_minus < session_time < diff_plus
+    return diff_minus <= session_time <= diff_plus
 
 def _copy_session_wout_issues(source_session: str, target_asset: str) -> tuple[str, list[dict]]:
     """ Returns tuple of new session no and list of issues """
