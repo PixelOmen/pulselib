@@ -10,6 +10,7 @@ class Config:
     ASSET_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMaster"
     ASSET_QUERY_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMasterList"
     ASSET_SESSION_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/LibMaster_ImSession_Related"
+    ASSET_SESSION_QUERY_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/ImSessionLibMasterList"
     ALERT_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/XeAlert"
     RESOURCE_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchResource"
     RESOURCE_QUERY_URL = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchResourceList"
@@ -32,8 +33,9 @@ class Config:
         cls.WO_URL = cls.WO_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.WO_QUERY_URL = cls.WO_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.ASSET_URL = cls.ASSET_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
-        cls.ASSET_SESSION_URL = cls.ASSET_SESSION_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.ASSET_QUERY_URL = cls.ASSET_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
+        cls.ASSET_SESSION_URL = cls.ASSET_SESSION_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
+        cls.ASSET_SESSION_QUERY_URL = cls.ASSET_SESSION_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.ALERT_URL = cls.ALERT_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.RESOURCE_URL = cls.RESOURCE_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         cls.RESOURCE_QUERY_URL = cls.RESOURCE_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
