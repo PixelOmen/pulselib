@@ -27,8 +27,8 @@ def _is_recent_session(sessiondict: dict) -> bool:
         raise ValueError(f"Session has no date_added field: {session_no}")
     session_time = datetime.strptime(date_added, "%Y-%m-%dT%H:%M:%S")
     now = datetime.now()
-    diff_minus = now - timedelta(minutes=1)
-    diff_plus = now + timedelta(minutes=1)
+    diff_minus = now - timedelta(minutes=2)
+    diff_plus = now + timedelta(minutes=2)
     return diff_minus < session_time < diff_plus
 
 def _copy_session_wout_issues(source_session: str, target_asset: str) -> tuple[str, list[dict]]:
