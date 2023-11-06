@@ -211,8 +211,8 @@ def _group_tables(groups: list["RoomGroup"], blocktype:str) -> list["Flowable"]:
         flowables.extend([*room_tables, spacer])
     return flowables
 
-def _header_date(daterange: tuple[str, str]=...) -> str:
-    if daterange is ...:
+def _header_date(daterange: tuple[str, str] | None = None) -> str:
+    if daterange is None:
         return datetime.now().strftime('%m/%d/%Y')
     if daterange[0] == daterange[1]:
         return datetime.strptime(daterange[0], '%Y-%m-%d').strftime('%m/%d/%Y')
@@ -220,12 +220,12 @@ def _header_date(daterange: tuple[str, str]=...) -> str:
     end = datetime.strptime(daterange[1], '%Y-%m-%d').strftime('%m/%d/%Y')
     return f"{start} - {end}"
 
-def _report_header(pageheader: str, daterange: tuple[str, str]=...) -> Table:
+def _report_header(pageheader: str, daterange: tuple[str, str] | None = None) -> Table:
     datestr = _header_date(daterange)
     header = _create_paragraph(f"{pageheader} {datestr}", PARA_PAGEHEADER_STYLE)
     return _create_table([[header]], TABLE_PAGEHEADER_STYLE, [PAGE_WIDTH])
 
-def scheduling_pdf(groups: list["RoomGroup"], outputpath: Path, daterange: tuple[str, str]=..., debug: bool=False) -> None:
+def scheduling_pdf(groups: list["RoomGroup"], outputpath: Path, daterange: tuple[str, str] | None = None, debug: bool=False) -> None:
     doc = SimpleDocTemplate(str(outputpath), pagesize=PAGE_SIZE, topMargin=TOP_MARGIN, bottomMargin=BOTTOM_MARGIN)
     if debug:
         first_group = groups[0]
@@ -236,7 +236,7 @@ def scheduling_pdf(groups: list["RoomGroup"], outputpath: Path, daterange: tuple
     header_padding = Spacer(0, 30)
     doc.build([report_header, header_padding, *tables])
 
-def operations_pdf(groups: list["RoomGroup"], outputpath: Path, daterange: tuple[str, str]=..., debug: bool=False) -> None:
+def operations_pdf(groups: list["RoomGroup"], outputpath: Path, daterange: tuple[str, str] | None = None, debug: bool=False) -> None:
     doc = SimpleDocTemplate(str(outputpath), pagesize=PAGE_SIZE, topMargin=TOP_MARGIN, bottomMargin=BOTTOM_MARGIN)
     if debug:
         first_group = groups[0]

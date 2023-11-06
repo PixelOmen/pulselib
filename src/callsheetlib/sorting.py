@@ -78,6 +78,8 @@ class WorkorderGroup:
             raise ValueError(f"Actor group must have personnel: {self.wo_num}")
         if self.is_actors and self.room_trx:
             raise ValueError(f"Actor group cannot have room transaction: {self.wo_num}")
+        if self.personnel:
+            self.personnel.sort(key=lambda x: x.begin)
 
     def get_room_trx(self) -> Transaction:
         if self.room_trx is None:
@@ -103,11 +105,11 @@ class JobGroup:
             ))
 
 class RoomGroup:
-    def __init__(self, room_trx: Transaction, jobgroups: list[JobGroup], table_headers: list[str]=...):
+    def __init__(self, room_trx: Transaction, jobgroups: list[JobGroup], table_headers: list[str] | None = None):
         # Duplicates are removed in table_data() and block_data() due to separate billing trxs
         self.room_trx = room_trx
         self.jobgroups: list[JobGroup] = jobgroups
-        if table_headers is ...:
+        if table_headers is None:
             self.table_headers = ["Workorder", "Begin", "End", "Personnel", "Title", "Company", "SAN", "Notes"]
         else:
             self.table_headers = table_headers
@@ -191,8 +193,13 @@ class RoomGroup:
             frontdesk = ""
 
         header_row1 = [job_desc, f"Order No: {wo}", "", wo_desc]
-        header_row2 = [dubbingdir, date, room_trx.phase_desc, frontdesk]
-        header_rows = [DataRow(header_row1, is_wo_header=True), DataRow(header_row2, is_wo_header=True)]
+        header_row2 = [room_trx.company, date, room_trx.phase_desc, frontdesk]
+        header_row3 = [dubbingdir, "", "", ""]
+        header_rows = [
+            DataRow(header_row1, is_wo_header=True),
+            DataRow(header_row2, is_wo_header=True),
+            DataRow(header_row3, is_wo_header=True)
+        ]
 
         data_rows = []
         if workgroup.room_only:
@@ -218,6 +225,24 @@ class RoomGroup:
             data_rows.append(datarow)
 
         return WorkOrderBlock(header_rows, data_rows)
+
+    def _format_adr_name(self, name: str) -> str:
+        if name.startswith("ADR"):
+            digit_str = name.split(" ")[1]
+            if not digit_str.isdigit():
+                return name
+            no_padding = str(int(digit_str))
+            return f"ADR {no_padding}"
+        return name
+
+    def _is_adr_match(self, room: str, desc: str) -> bool:
+        formatted_room = self._format_adr_name(room)
+        match = re.search(r"ADR \d+", desc)
+        if match:
+            desc_room = match.group(0)
+            if desc_room == room or desc_room == formatted_room:
+                return True
+        return False
 
     def _operations_block(self, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
         if room_trx is None:
@@ -304,8 +329,12 @@ class RoomGroup:
                     continue
                 blocks.append(block_method(workgroup))
             if self.room_trx.group in SAG_GROUPS_ROOMS:
-                for actor in jobgroup.actorgroups:
-                    blocks.append(self._scheduling_block(actor, self.room_trx))
+                for actorgroup in jobgroup.actorgroups:
+                    if self.room_trx.name.lower().startswith("adr"):
+                        wo_desc = actorgroup.personnel[0].wo_desc
+                        if not self._is_adr_match(self.room_trx.name, wo_desc):
+                            continue
+                    blocks.append(self._scheduling_block(actorgroup, self.room_trx))
         blocks.sort()
         return self._remove_duplicates(blocks)
 

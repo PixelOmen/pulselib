@@ -2,12 +2,13 @@ import json
 import requests
 from typing import overload, Literal
 
-from . import Transaction
-from .. import utils, PhaseEnum
 from ..config import CONFIG
+from .. import utils, PhaseEnum
 
-def gen_query(daterange: tuple[str, str]=...) -> str:
-    if daterange is ...:
+from . import Transaction
+
+def gen_query(daterange: tuple[str, str] | None = None) -> str:
+    if daterange is None:
         daterange = (utils.today(), utils.today())
     queryparams = {
         "trx_begin_dt": {
@@ -49,6 +50,7 @@ def gen_resultcolumns() -> str:
     })
 
 def gen_listquery_url(query: str, resultcolumns: str) -> str:
+    test = CONFIG.TRX_QUERY_URL
     return f"{CONFIG.TRX_QUERY_URL}/?query={query}&resultColumns={resultcolumns}"
 
 def list_query(query: str, resultcolumns: str) -> list[dict]:
@@ -58,12 +60,12 @@ def list_query(query: str, resultcolumns: str) -> list[dict]:
     return json.loads(body)
 
 @overload
-def by_date(daterange: tuple[str, str]=...,
+def by_date(daterange: tuple[str, str] | None = None,
             onhold: bool=True, invoiced: bool=True, proposed: bool=True, raw: Literal[True]=True) -> list[dict]:...
 @overload
-def by_date(daterange: tuple[str, str]=...,
+def by_date(daterange: tuple[str, str] | None = None,
             onhold: bool=True, invoiced: bool=True, proposed: bool=True, raw: Literal[False]=False) -> list[Transaction]:...
-def by_date(daterange: tuple[str, str]=...,
+def by_date(daterange: tuple[str, str] | None = None,
             onhold: bool=True, invoiced: bool=True, proposed: bool=True, raw: bool=False):
     query = gen_query(daterange)
     resultcolumns = gen_resultcolumns()
