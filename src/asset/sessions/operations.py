@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta
 
 from . import session_requests
-from .assetsessionmaps import ASSET_SESSION_MAPS
+from .assetsessionmaps import (
+    ASSET_SESSION_MAPS,
+    SESSION_ISSUE_MAPS
+)
 
 
 def _strip_asset_info(sessiondict: dict) -> dict:
@@ -34,11 +37,11 @@ def _is_recent_session(sessiondict: dict) -> bool:
 def _copy_session_wout_issues(source_session: str, target_asset: str) -> tuple[str, list[dict]]:
     """ Returns tuple of new session no and list of issues """
     source_dict = session_requests.get(source_session)
-    issues = source_dict.get("im_session_issue")
+    issues = ASSET_SESSION_MAPS["issues"].read(source_dict)
     if issues is None:
         issues = []
     else:
-        del source_dict["im_session_issue"]
+        del source_dict[ASSET_SESSION_MAPS["issues"].keys]
 
     new_dict = _format_session_copy(source_dict, target_asset)
     session_requests.post(new_dict)
@@ -61,8 +64,22 @@ def _replace_session_in_issues(issues: list[dict], new_session_no: str) -> None:
     if not issues:
         return
     for issue in issues:
-        del issue["session_issue_no"]
+        if issue.get("session_issue_no") is not None:
+            del issue["session_issue_no"]
         issue["session_no"] = new_session_no
+
+def _gen_tc_events(tcs: list[tuple[str, str]]) -> list[dict]:
+    events = []
+    event_type_key = SESSION_ISSUE_MAPS["event_type"].keys
+    tc_in_key = SESSION_ISSUE_MAPS["tc_in"].keys
+    tc_out_key = SESSION_ISSUE_MAPS["tc_out"].keys
+    for tc in tcs:
+        events.append({
+            event_type_key: "EVENT",
+            tc_in_key: tc[0],
+            tc_out_key: tc[1],
+        })
+    return events
 
 
 def copy_session(source_session: str, target_asset: str) -> str:
@@ -80,3 +97,8 @@ def patch_po(session_no: str, po_num: str) -> None:
         "value": po_num
     }]
     session_requests.patch(session_no, patch)
+
+
+def patch_tc_events(session_no: str, tcs: list[tuple[str, str]]) -> None:
+    events = _gen_tc_events(tcs)
+    session_requests.post_issues(session_no, events)
