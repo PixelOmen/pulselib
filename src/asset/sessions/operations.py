@@ -76,8 +76,8 @@ def _gen_tc_events(tcs: list[tuple[str, str]]) -> list[dict]:
     for tc in tcs:
         events.append({
             event_type_key: "EVENT",
-            tc_in_key: tc[0],
-            tc_out_key: tc[1],
+            tc_in_key: tc[0].replace(":", ""),
+            tc_out_key: tc[1].replace(":", "")
         })
     return events
 
@@ -99,6 +99,7 @@ def patch_po(session_no: str, po_num: str) -> None:
     session_requests.patch(session_no, patch)
 
 
-def patch_tc_events(session_no: str, tcs: list[tuple[str, str]]) -> None:
+def post_tc_events(session_no: str, tcs: list[tuple[str, str]]) -> None:
     events = _gen_tc_events(tcs)
+    _replace_session_in_issues(events, session_no)
     session_requests.post_issues(session_no, events)

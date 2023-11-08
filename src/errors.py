@@ -36,11 +36,11 @@ class MultipleAssetsFoundError(Exception):
 
 class SessionNotFoundError(Exception):
     def __init__(self, session_no: str):
-        super().__init__(f"asset_requests: Asset not found: {session_no}")
+        super().__init__(f"session_requests: Session not found: {session_no}")
 
 class SessionUncaughtError(Exception):
     def __init__(self, session_no: str | dict, err: str):
-        super().__init__(f"asset_requests: Uncaught error - {session_no} - {err}")
+        super().__init__(f"session_requests: Uncaught error - {session_no} - {err}")
 
 
 class ResourceUncaughtError(Exception):
