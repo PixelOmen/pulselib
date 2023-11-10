@@ -31,9 +31,9 @@ class Asset:
         cls._set_path_from_interface(jdict, specinterface)
         return cls(jdict, specinterface)
     
-    def __init__(self, jdict: dict, specinterface: SpecInterface=...) -> None:
+    def __init__(self, jdict: dict, specinterface: SpecInterface | None = None) -> None:
         self.jdict = jdict
-        self.specinterface = SpecInterface("") if specinterface is ... else specinterface
+        self.specinterface = SpecInterface("") if specinterface is None else specinterface
         self.assetno: str | None = ASSET_FIELD_MAPS["assetno"].read(self.jdict)
         self.probe: MediaProbe | None = None
         self.wo_seq: int | None = None
@@ -96,7 +96,7 @@ class Asset:
 
     def patch(self) -> None:
         if not self.assetno:
-            raise RuntimeError(f"Attemped to patch asset w/o assetno: {self.specinterface.path}")
+            raise RuntimeError(f"Attempted to patch asset w/o assetno: {self.specinterface.path}")
         if not self._wasprobed:
             self.probefile()
         asset_requests.patch(self.assetno, self.specinterface.patch_ops())
