@@ -11,7 +11,7 @@ from . import ReportEnum
 
 if TYPE_CHECKING:
     from reportlab.platypus import Flowable
-    from .sorting import RoomGroup, WorkOrderBlock
+    from .sorting import WorkOrderBlock, TopLevelBlock
 
 # Divde by 255 to get a value between 0 and 1
 # CELL_COLOR = colors.Color(198 / 255, 217 / 255, 240 / 255, 1)  # type: ignore (reportlab bug)
@@ -188,7 +188,7 @@ def _create_table(data: list[list["Flowable"]], style: TableStyle, colWidths: li
     table.setStyle(style)
     return table
 
-def _group_tables(groups: list["RoomGroup"], blocktype:str) -> list["Flowable"]:
+def _group_tables(groups: list["TopLevelBlock"], blocktype:str) -> list["Flowable"]:
     data_func = BLOCK_TYPES.get(blocktype)
     if data_func is None:
         raise ValueError(f"Invalid blocktype: {blocktype}")
@@ -196,7 +196,7 @@ def _group_tables(groups: list["RoomGroup"], blocktype:str) -> list["Flowable"]:
     if not groups:
         return flowables
     for group in groups:
-        group_para = _create_paragraph(group.room_trx.name, PARA_LABEL_STYLE)
+        group_para = _create_paragraph(group.name, PARA_LABEL_STYLE)
         group_header_table = _create_table([[group_para]], TABLE_PAGEHEADER_STYLE, [PAGE_WIDTH * 0.9])
         room_tables = []
         for index, block in enumerate(group.blocks(blocktype=blocktype)):
@@ -225,7 +225,7 @@ def _report_header(pageheader: str, daterange: tuple[str, str] | None = None) ->
     header = _create_paragraph(f"{pageheader} {datestr}", PARA_PAGEHEADER_STYLE)
     return _create_table([[header]], TABLE_PAGEHEADER_STYLE, [PAGE_WIDTH])
 
-def scheduling_pdf(groups: list["RoomGroup"], outputpath: Path, daterange: tuple[str, str] | None = None, debug: bool=False) -> None:
+def scheduling_pdf(groups: list["TopLevelBlock"], outputpath: Path, daterange: tuple[str, str] | None = None, debug: bool=False) -> None:
     doc = SimpleDocTemplate(str(outputpath), pagesize=PAGE_SIZE, topMargin=TOP_MARGIN, bottomMargin=BOTTOM_MARGIN)
     if debug:
         first_group = groups[0]
@@ -236,7 +236,7 @@ def scheduling_pdf(groups: list["RoomGroup"], outputpath: Path, daterange: tuple
     header_padding = Spacer(0, 30)
     doc.build([report_header, header_padding, *tables])
 
-def operations_pdf(groups: list["RoomGroup"], outputpath: Path, daterange: tuple[str, str] | None = None, debug: bool=False) -> None:
+def operations_pdf(groups: list["TopLevelBlock"], outputpath: Path, daterange: tuple[str, str] | None = None, debug: bool=False) -> None:
     doc = SimpleDocTemplate(str(outputpath), pagesize=PAGE_SIZE, topMargin=TOP_MARGIN, bottomMargin=BOTTOM_MARGIN)
     if debug:
         first_group = groups[0]

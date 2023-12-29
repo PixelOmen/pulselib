@@ -50,7 +50,6 @@ def gen_resultcolumns() -> str:
     })
 
 def gen_listquery_url(query: str, resultcolumns: str) -> str:
-    test = CONFIG.TRX_QUERY_URL
     return f"{CONFIG.TRX_QUERY_URL}/?query={query}&resultColumns={resultcolumns}"
 
 def list_query(query: str, resultcolumns: str) -> list[dict]:

@@ -49,7 +49,7 @@ class ResourceUncaughtError(Exception):
 
 class ResourceExistsError(Exception):
     def __init__(self, res_no: str | dict, err: str):
-        super().__init__(f"asset_requests: Uncaught error - {res_no} - {err}")
+        super().__init__(f"asset_requests: Asset exists - {res_no} - {err}")
 
 class ResourceNotFoundError(Exception):
     def __init__(self, res_no: str):
@@ -69,3 +69,8 @@ class WorkOrderNotFoundError(Exception):
 class WorkOrderUncaughtError(Exception):
     def __init__(self, wo_num: str | dict, err: str):
         super().__init__(f"wo_requests: Uncaught error - {wo_num} - {err}")
+
+
+class RosterUncaughtError(Exception):
+    def __init__(self, query_or_no: str | dict, err: str):
+        super().__init__(f"roster_requests: Uncaught error - {query_or_no} - {err}")

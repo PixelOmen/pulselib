@@ -6,9 +6,7 @@ if "mediapulse" not in RosettaPath.input_mount_patterns:
     RosettaPath.input_mount_patterns["mediapulse_noslash"] = r"^sanviewer"
 
 
-from .src import utils
-from .src import asset
-from .src import errors
+from .src import utils, asset, errors
 from .src.trx import trx_requests
 from .src.asset import asset_requests
 from .src.alert import alert_requests
@@ -17,3 +15,4 @@ from .src.fieldmaps import FieldTypeEnum
 from .src.resource import resource_requests
 from .src.alert.alert_requests import simple_alert
 from .src.wo import wo_requests, WorkOrder, WOSource
+from .src.roster import roster_requests, RosterTimeOff

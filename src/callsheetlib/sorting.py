@@ -1,11 +1,14 @@
 import re
-from typing import TypeVar
 from datetime import datetime
 from dataclasses import dataclass, field
+from typing import TypeVar, TYPE_CHECKING, Union
 
 from . import ReportEnum
 from ..trx import Transaction, Personnel, Room, SAN
 from .. import PERSONNEL_GROUPS, ROOM_GROUPS, SAN_GROUPS, SAG_GROUPS, SAG_GROUPS_ROOMS
+
+if TYPE_CHECKING:
+    from ..roster import RosterTimeOff
 
 T = TypeVar("T")
 
@@ -59,6 +62,23 @@ class WorkOrderBlock:
             return self.header_rows[1] < other.header_rows[1]
         raise TypeError(f"Cannot compare WorkOrderBlock to {type(other)}")
 
+class TopLevelBlock:
+    def __init__(self, data: Union["RoomGroup", "RosterTimeOff"]):
+        self.data = data
+
+    @property
+    def name(self) -> str:
+        if isinstance(self.data, RoomGroup):
+            return self.data.room_trx.name
+        else:
+            return self.data.name
+
+    def blocks(self, blocktype: str) -> list[WorkOrderBlock]:
+        if isinstance(self.data, RoomGroup):
+            return self.data.blocks(blocktype)
+        else:
+            return RoomGroup.roster_time_off_blocks([self.data])
+
 @dataclass
 class WorkorderGroup:
     wo_num: str
@@ -105,7 +125,38 @@ class JobGroup:
             ))
 
 class RoomGroup:
-    def __init__(self, room_trx: Transaction, jobgroups: list[JobGroup], table_headers: list[str] | None = None):
+
+    @staticmethod
+    def _format_date(datestr: str, fulldate: bool=False) -> str:
+        date = datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%S")
+        if fulldate:
+            return date.strftime("%m/%d/%Y %I:%M%p").lower()
+        else:
+            return date.strftime("%I:%M%p").lower()
+
+    @staticmethod
+    def roster_time_off_blocks(roster_time_offs: list["RosterTimeOff"]) -> list[WorkOrderBlock]:
+        blocks: list[WorkOrderBlock] = []
+        if not roster_time_offs:
+            return blocks
+        for timeoff in roster_time_offs:
+            header_row1 = ["Maintenance",  RoomGroup._format_date(timeoff.start, fulldate=True), ""]
+            # header_row2 = ["", "", "", ""]
+            # header_row3 = ["", "", "", ""]
+            header_rows = [
+                DataRow(header_row1, is_wo_header=True),
+                # DataRow(header_row2, is_wo_header=True),
+                # DataRow(header_row3, is_wo_header=True)
+            ]
+            begin = RoomGroup._format_date(timeoff.start)
+            end = RoomGroup._format_date(timeoff.end)
+            datestr = f"{begin} - {end}"
+            datarow = DataRow(["", datestr, "", ""], is_actor=False)
+            blocks.append(WorkOrderBlock(header_rows, [datarow]))
+        return blocks
+    
+    def __init__(self, room_trx: Transaction, jobgroups: list[JobGroup],
+                 table_headers: list[str] | None = None):
         # Duplicates are removed in table_data() and block_data() due to separate billing trxs
         self.room_trx = room_trx
         self.jobgroups: list[JobGroup] = jobgroups
@@ -117,16 +168,10 @@ class RoomGroup:
             ReportEnum.scheduling: self._scheduling_block,
             ReportEnum.operations: self._operations_block,
         }
+        self._roster_time_offs: list[RosterTimeOff] = []
 
     def _get_datetime(self, date: str) -> datetime:
         return datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
-    
-    def _format_date(self, datestr: str, fulldate: bool=False) -> str:
-        date = datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%S")
-        if fulldate:
-            return date.strftime("%m/%d/%Y %I:%M%p").lower()
-        else:
-            return date.strftime("%I:%M%p").lower()
 
     def _remove_duplicates(self, data: list[T]) -> list[T]:
         no_dupes = []
@@ -160,12 +205,13 @@ class RoomGroup:
                          person.company, san, person.frontdeskinfo])
         return rows
 
-    def _single_table_row(self, trx: Transaction, san: str="", is_room: bool=False) -> list[str]:
-        begin = self._format_date(trx.begin)
-        end = self._format_date(trx.end)
-        person = "" if is_room else trx.name
-        return [trx.wo, begin, end, person, trx.job_desc,
-                trx.company, san, trx.frontdeskinfo]
+    # ----- Deprecated -----
+    # def _single_table_row(self, trx: Transaction, san: str="", is_room: bool=False) -> list[str]:
+    #     begin = self._format_date(trx.begin)
+    #     end = self._format_date(trx.end)
+    #     person = "" if is_room else trx.name
+    #     return [trx.wo, begin, end, person, trx.job_desc,
+    #             trx.company, san, trx.frontdeskinfo]
 
     def _scheduling_block(self, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
         if room_trx is None:
@@ -297,26 +343,10 @@ class RoomGroup:
             data_rows.append(datarow)
 
         return WorkOrderBlock(header_rows, data_rows)
-
-    def table_data(self) -> list[DataRow]:
-        rows: list[DataRow] = []
-        for jobgroup in self.jobgroups:
-            for workgroup in jobgroup.workordergroups:
-                if workgroup.room_trx is None or workgroup.room_trx.name != self.room_trx.name:
-                    continue
-                if workgroup.room_only:
-                    san = workgroup.sans[0].name if workgroup.sans else ""
-                    rows.append(DataRow(self._single_table_row(workgroup.room_trx, san, is_room=True), is_wo_header=True))
-                else:
-                    personnel = self._personnel_table_rows(workgroup)
-                    if personnel:
-                        rows.extend([DataRow(row, is_actor=False) for row in personnel])
-            if self.room_trx.group in SAG_GROUPS_ROOMS:
-                for actorlist in jobgroup.actors_by_wo.values():
-                    rows.extend([DataRow(self._single_table_row(actor), is_actor=True) for actor in actorlist])
-        rows.sort()
-        return self._remove_duplicates(rows)
     
+    def add_roster_time_offs(self, roster_time_offs: list["RosterTimeOff"]) -> None:
+        self._roster_time_offs += roster_time_offs
+
     def blocks(self, blocktype: str) -> list[WorkOrderBlock]:
         block_method = self.block_types.get(blocktype)
         if block_method is None:
@@ -335,9 +365,30 @@ class RoomGroup:
                         if not self._is_adr_match(self.room_trx.name, wo_desc):
                             continue
                     blocks.append(self._scheduling_block(actorgroup, self.room_trx))
+        blocks.extend(self.roster_time_off_blocks(self._roster_time_offs))
         blocks.sort()
         return self._remove_duplicates(blocks)
-
+    
+    # ----- Deprecated -----
+    # def table_data(self) -> list[DataRow]:
+    #     rows: list[DataRow] = []
+    #     for jobgroup in self.jobgroups:
+    #         for workgroup in jobgroup.workordergroups:
+    #             if workgroup.room_trx is None or workgroup.room_trx.name != self.room_trx.name:
+    #                 continue
+    #             if workgroup.room_only:
+    #                 san = workgroup.sans[0].name if workgroup.sans else ""
+    #                 rows.append(DataRow(self._single_table_row(workgroup.room_trx, san, is_room=True), is_wo_header=True))
+    #             else:
+    #                 personnel = self._personnel_table_rows(workgroup)
+    #                 if personnel:
+    #                     rows.extend([DataRow(row, is_actor=False) for row in personnel])
+    #         if self.room_trx.group in SAG_GROUPS_ROOMS:
+    #             for actorlist in jobgroup.actors_by_wo.values():
+    #                 rows.extend([DataRow(self._single_table_row(actor), is_actor=True) for actor in actorlist])
+    #     rows.sort()
+    #     return self._remove_duplicates(rows)
+    
 
 
 class ResourceGroups:

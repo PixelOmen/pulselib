@@ -14,6 +14,8 @@ class Config:
     ALERT_URL: str = "http://xytechapp01:PORT/api/v1/database/DATABASE/XeAlert"
     RESOURCE_URL: str = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchResource"
     RESOURCE_QUERY_URL: str = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchResourceList"
+    ROSTER_URL: str = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchRosterTimeOff"
+    ROSTER_QUERY_URL: str = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchRosterTimeOffList"
     SCHGROUP_URL: str = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchGroup"
     QUALIFICATION_URL: str = "http://xytechapp01:PORT/api/v1/database/DATABASE/SchQualification"
     MEDIAINFO_URL: str = "http://10.0.20.96:PORT/api/probe"
@@ -38,6 +40,8 @@ class Config:
         self.ALERT_URL = self.ALERT_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         self.RESOURCE_URL = self.RESOURCE_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         self.RESOURCE_QUERY_URL = self.RESOURCE_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
+        self.ROSTER_URL = self.ROSTER_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
+        self.ROSTER_QUERY_URL = self.ROSTER_QUERY_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         self.SCHGROUP_URL = self.SCHGROUP_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         self.QUALIFICATION_URL = self.QUALIFICATION_URL.replace("PORT", mp_port).replace("DATABASE", mp_db)
         self.MEDIAINFO_URL = self.MEDIAINFO_URL.replace("PORT", mi_port)
