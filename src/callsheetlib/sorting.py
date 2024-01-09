@@ -116,18 +116,20 @@ class JobGroup:
 
     def __post_init__(self):
         for wo, trxs in self.actors_by_wo.items():
-            self.actorgroups.append(WorkorderGroup(
-                wo_num=wo,
-                personnel=trxs,
-                sans=[],
-                room_trx=None,
-                is_actors=True
-            ))
+            self.actorgroups.append(
+                WorkorderGroup(
+                    wo_num=wo,
+                    personnel=trxs,
+                    sans=[],
+                    room_trx=None,
+                    is_actors=True
+                )
+            )
 
 class RoomGroup:
 
     @staticmethod
-    def _format_date(datestr: str, fulldate: bool=False) -> str:
+    def format_date(datestr: str, fulldate: bool=False) -> str:
         date = datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%S")
         if fulldate:
             return date.strftime("%m/%d/%Y %I:%M%p").lower()
@@ -140,16 +142,10 @@ class RoomGroup:
         if not roster_time_offs:
             return blocks
         for timeoff in roster_time_offs:
-            header_row1 = ["Maintenance",  RoomGroup._format_date(timeoff.start, fulldate=True), ""]
-            # header_row2 = ["", "", "", ""]
-            # header_row3 = ["", "", "", ""]
-            header_rows = [
-                DataRow(header_row1, is_wo_header=True),
-                # DataRow(header_row2, is_wo_header=True),
-                # DataRow(header_row3, is_wo_header=True)
-            ]
-            begin = RoomGroup._format_date(timeoff.start)
-            end = RoomGroup._format_date(timeoff.end)
+            header_row1 = ["Maintenance",  RoomGroup.format_date(timeoff.start, fulldate=True), ""]
+            header_rows = [DataRow(header_row1, is_wo_header=True)]
+            begin = RoomGroup.format_date(timeoff.start)
+            end = RoomGroup.format_date(timeoff.end)
             datestr = f"{begin} - {end}"
             datarow = DataRow(["", datestr, "", ""], is_actor=False)
             blocks.append(WorkOrderBlock(header_rows, [datarow]))
@@ -167,6 +163,7 @@ class RoomGroup:
         self.block_types = {
             ReportEnum.scheduling: self._scheduling_block,
             ReportEnum.operations: self._operations_block,
+            ReportEnum.it: self._it_block
         }
         self._roster_time_offs: list[RosterTimeOff] = []
 
@@ -194,13 +191,31 @@ class RoomGroup:
                 contents += char
         return contents
     
+    def _format_adr_name(self, name: str) -> str:
+        if name.startswith("ADR"):
+            digit_str = name.split(" ")[1]
+            if not digit_str.isdigit():
+                return name
+            no_padding = str(int(digit_str))
+            return f"ADR {no_padding}"
+        return name
+
+    def _is_adr_match(self, room: str, desc: str) -> bool:
+        formatted_room = self._format_adr_name(room)
+        match = re.search(r"ADR \d+", desc)
+        if match:
+            desc_room = match.group(0)
+            if desc_room == room or desc_room == formatted_room:
+                return True
+        return False
+    
     def _personnel_table_rows(self, workgroup: WorkorderGroup) -> list[list[str]]:
         cleandata = self._remove_duplicates(workgroup.personnel)
         san = workgroup.sans[0].name if workgroup.sans else ""
         rows = []
         for person in cleandata:
-            begin = self._format_date(person.begin)
-            end = self._format_date(person.end)
+            begin = self.format_date(person.begin)
+            end = self.format_date(person.end)
             rows.append([person.wo, begin, end, person.name, person.job_desc,
                          person.company, san, person.frontdeskinfo])
         return rows
@@ -226,12 +241,12 @@ class RoomGroup:
             job_desc = workgroup.personnel[0].job_desc
             wo = workgroup.wo_num
             wo_desc = workgroup.personnel[0].wo_desc
-            date = self._format_date(workgroup.personnel[0].wo_begin, fulldate=True)
+            date = self.format_date(workgroup.personnel[0].wo_begin, fulldate=True)
         else:
             job_desc = room_trx.job_desc
             wo = room_trx.wo
             wo_desc = room_trx.wo_desc
-            date = self._format_date(room_trx.wo_begin, fulldate=True)
+            date = self.format_date(room_trx.wo_begin, fulldate=True)
 
         if room_trx.frontdeskinfo:
             frontdesk = f"Front Desk Info: <br/>{room_trx.frontdeskinfo}"
@@ -249,13 +264,13 @@ class RoomGroup:
 
         data_rows = []
         if workgroup.room_only:
-            begin = self._format_date(room_trx.begin)
-            end = self._format_date(room_trx.end)
+            begin = self.format_date(room_trx.begin)
+            end = self.format_date(room_trx.end)
             data_rows.append(DataRow(["", f"{begin} - {end}", "", ""]))
         else:
             for person in workgroup.personnel:
-                begin = self._format_date(person.begin)
-                end = self._format_date(person.end)
+                begin = self.format_date(person.begin)
+                end = self.format_date(person.end)
                 datestr = f"{begin} - {end}"
                 desc = f"{person.group}: {person.name}"
                 note = self._parse_html_note(person.note)
@@ -263,32 +278,14 @@ class RoomGroup:
                 data_rows.append(datarow)
 
         for san in workgroup.sans:
-            begin = self._format_date(san.begin)
-            end = self._format_date(san.end)
+            begin = self.format_date(san.begin)
+            end = self.format_date(san.end)
             datestr = f"{begin} - {end}"
             desc = f"{san.group}: {san.name}"
             datarow = DataRow([desc, datestr, "", ""], is_actor=False)
             data_rows.append(datarow)
 
         return WorkOrderBlock(header_rows, data_rows)
-
-    def _format_adr_name(self, name: str) -> str:
-        if name.startswith("ADR"):
-            digit_str = name.split(" ")[1]
-            if not digit_str.isdigit():
-                return name
-            no_padding = str(int(digit_str))
-            return f"ADR {no_padding}"
-        return name
-
-    def _is_adr_match(self, room: str, desc: str) -> bool:
-        formatted_room = self._format_adr_name(room)
-        match = re.search(r"ADR \d+", desc)
-        if match:
-            desc_room = match.group(0)
-            if desc_room == room or desc_room == formatted_room:
-                return True
-        return False
 
     def _operations_block(self, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
         if room_trx is None:
@@ -303,12 +300,12 @@ class RoomGroup:
             job_desc = workgroup.personnel[0].job_desc
             wo = workgroup.wo_num
             wo_desc = workgroup.personnel[0].wo_desc
-            date = self._format_date(workgroup.personnel[0].wo_begin, fulldate=True)
+            date = self.format_date(workgroup.personnel[0].wo_begin, fulldate=True)
         else:
             job_desc = room_trx.job_desc
             wo = room_trx.wo
             wo_desc = room_trx.wo_desc
-            date = self._format_date(room_trx.wo_begin, fulldate=True)
+            date = self.format_date(room_trx.wo_begin, fulldate=True)
 
         if room_trx.frontdeskinfo:
             frontdesk = f"Front Desk Info: <br/>{room_trx.frontdeskinfo}"
@@ -321,13 +318,13 @@ class RoomGroup:
 
         data_rows = []
         if workgroup.room_only:
-            begin = self._format_date(room_trx.begin)
-            end = self._format_date(room_trx.end)
+            begin = self.format_date(room_trx.begin)
+            end = self.format_date(room_trx.end)
             data_rows.append(DataRow(["", f"{begin} - {end}", "", ""]))
         else:
             for person in workgroup.personnel:
-                begin = self._format_date(person.begin)
-                end = self._format_date(person.end)
+                begin = self.format_date(person.begin)
+                end = self.format_date(person.end)
                 datestr = f"{begin} - {end}"
                 desc = f"{person.group}: {person.name}"
                 note = self._parse_html_note(person.note)
@@ -335,8 +332,74 @@ class RoomGroup:
                 data_rows.append(datarow)
 
         for san in workgroup.sans:
-            begin = self._format_date(san.begin)
-            end = self._format_date(san.end)
+            begin = self.format_date(san.begin)
+            end = self.format_date(san.end)
+            datestr = f"{begin} - {end}"
+            desc = f"{san.group}: {san.name}"
+            datarow = DataRow([desc, datestr, "", ""], is_actor=False)
+            data_rows.append(datarow)
+
+        return WorkOrderBlock(header_rows, data_rows)
+
+    def _it_block(self, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
+        if room_trx is None:
+            room_trx = workgroup.get_room_trx()
+
+        if room_trx.wo_rep:
+            rep = f"Added by: {room_trx.wo_rep}"
+        else:
+            rep = ""
+
+        if self.room_trx.group in SAG_GROUPS_ROOMS and room_trx.dubbingdir:
+            dubbingdir = f"Dubbing Director: {room_trx.dubbingdir}"
+        else:
+            dubbingdir = ""
+
+        if workgroup.is_actors:
+            job_desc = workgroup.personnel[0].job_desc
+            wo = workgroup.wo_num
+            wo_desc = workgroup.personnel[0].wo_desc
+            date = self.format_date(workgroup.personnel[0].wo_begin, fulldate=True)
+        else:
+            job_desc = room_trx.job_desc
+            wo = room_trx.wo
+            wo_desc = room_trx.wo_desc
+            date = self.format_date(room_trx.wo_begin, fulldate=True)
+
+        if room_trx.frontdeskinfo:
+            frontdesk = f"Front Desk Info: <br/>{room_trx.frontdeskinfo}"
+        else:
+            frontdesk = ""
+
+        header_row1 = [job_desc, f"Order No: {wo}", "", wo_desc]
+        header_row2 = [room_trx.company, date, room_trx.phase_desc, frontdesk]
+        header_row3 = [rep, "", "", ""]
+        header_row4 = [dubbingdir, "", "", ""]
+        header_rows = [
+            DataRow(header_row1, is_wo_header=True),
+            DataRow(header_row2, is_wo_header=True),
+            DataRow(header_row3, is_wo_header=True),
+            DataRow(header_row4, is_wo_header=True)
+        ]
+
+        data_rows = []
+        if workgroup.room_only:
+            begin = self.format_date(room_trx.begin)
+            end = self.format_date(room_trx.end)
+            data_rows.append(DataRow(["", f"{begin} - {end}", "", ""]))
+        else:
+            for person in workgroup.personnel:
+                begin = self.format_date(person.begin)
+                end = self.format_date(person.end)
+                datestr = f"{begin} - {end}"
+                desc = f"{person.group}: {person.name}"
+                note = self._parse_html_note(person.note)
+                datarow = DataRow([desc, datestr, "", note], workgroup.is_actors)
+                data_rows.append(datarow)
+
+        for san in workgroup.sans:
+            begin = self.format_date(san.begin)
+            end = self.format_date(san.end)
             datestr = f"{begin} - {end}"
             desc = f"{san.group}: {san.name}"
             datarow = DataRow([desc, datestr, "", ""], is_actor=False)

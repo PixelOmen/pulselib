@@ -173,7 +173,8 @@ def _operations_data(blocks: list["WorkOrderBlock"]) -> list[list["Flowable"]]:
 
 BLOCK_TYPES = {
     ReportEnum.scheduling: _scheduling_data,
-    ReportEnum.operations: _operations_data
+    ReportEnum.operations: _operations_data,
+    ReportEnum.it: _scheduling_data
 }
 
 
@@ -244,5 +245,16 @@ def operations_pdf(groups: list["TopLevelBlock"], outputpath: Path, daterange: t
     else:
         tables = _group_tables(groups, blocktype=ReportEnum.operations)
     report_header = _report_header("Operations Schedule", daterange=daterange)
+    header_padding = Spacer(0, 30)
+    doc.build([report_header, header_padding, *tables])
+
+def it_pdf(groups: list["TopLevelBlock"], outputpath: Path, daterange: tuple[str, str] | None = None, debug: bool=False) -> None:
+    doc = SimpleDocTemplate(str(outputpath), pagesize=PAGE_SIZE, topMargin=TOP_MARGIN, bottomMargin=BOTTOM_MARGIN)
+    if debug:
+        first_group = groups[0]
+        tables = _group_tables(groups=[first_group], blocktype=ReportEnum.it)
+    else:
+        tables = _group_tables(groups, blocktype=ReportEnum.it)
+    report_header = _report_header("Room Schedule", daterange=daterange)
     header_padding = Spacer(0, 30)
     doc.build([report_header, header_padding, *tables])
