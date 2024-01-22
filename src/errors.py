@@ -71,6 +71,15 @@ class WorkOrderUncaughtError(Exception):
         super().__init__(f"wo_requests: Uncaught error - {wo_num} - {err}")
 
 
+class JobNotFoundError(Exception):
+    def __init__(self, job_num: str):
+        super().__init__(f"job_requests: Job not found: {job_num}")
+
+class JobUncaughtError(Exception):
+    def __init__(self, job_num: str | dict, err: str):
+        super().__init__(f"job_requests: Uncaught error - {job_num} - {err}")
+
+
 class RosterUncaughtError(Exception):
     def __init__(self, query_or_no: str | dict, err: str):
         super().__init__(f"roster_requests: Uncaught error - {query_or_no} - {err}")

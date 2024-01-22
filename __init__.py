@@ -14,5 +14,6 @@ from .src.resource.model import Linguist
 from .src.fieldmaps import FieldTypeEnum
 from .src.resource import resource_requests
 from .src.alert.alert_requests import simple_alert
+from .src.job import job_requests
 from .src.wo import wo_requests, WorkOrder, WOSource
 from .src.roster import roster_requests, RosterTimeOff
