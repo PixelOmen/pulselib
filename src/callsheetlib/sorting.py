@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import TypeVar, TYPE_CHECKING, Union
 
 from . import ReportEnum
+from ..job import job_requests
 from ..trx import Transaction, Personnel, Room, SAN
 from .. import PERSONNEL_GROUPS, ROOM_GROUPS, SAN_GROUPS, SAG_GROUPS, SAG_GROUPS_ROOMS
 
@@ -113,6 +114,8 @@ class JobGroup:
     workordergroups: list[WorkorderGroup]
     actors_by_wo: dict[str, list[Transaction]] = field(default_factory=dict)
     actorgroups: list [WorkorderGroup] = field(default_factory=list)
+    job_jdict = {}
+    project_manager: str | None = None
 
     def __post_init__(self):
         for wo, trxs in self.actors_by_wo.items():
@@ -125,6 +128,19 @@ class JobGroup:
                     is_actors=True
                 )
             )
+
+    def pull_project_manager(self, refresh: bool=False) -> None:
+        if self.project_manager is not None and not refresh:
+            return
+        job_jdict = job_requests.get(self.job_num)
+        sales_office_dict = job_jdict.get("sale_office_no")
+        if sales_office_dict is None:
+            raise ValueError(f"Job does not have a sales office dict in json response: {self.job_num}")
+        pm_no = sales_office_dict.get("sale_office_no")
+        if pm_no is None:
+            raise ValueError(f"Sales office dict does not have a sale_office_no in Job: {self.job_num}")
+        self.project_manager = job_requests.get_project_manager_desc(pm_no)
+
 
 class RoomGroup:
 
@@ -201,6 +217,12 @@ class RoomGroup:
         return name
 
     def _is_adr_match(self, room: str, desc: str) -> bool:
+        """
+        Check if the room name matches the ADR number in the actor wo description. 
+        The job the actor transaction/workorder belongs to could contain
+        multiple ADR rooms, so we need to check the description to make sure
+        we are correctly matching the ADR room to the actor.
+        """
         formatted_room = self._format_adr_name(room)
         match = re.search(r"ADR \d+", desc)
         if match:
@@ -228,125 +250,12 @@ class RoomGroup:
     #     return [trx.wo, begin, end, person, trx.job_desc,
     #             trx.company, san, trx.frontdeskinfo]
 
-    def _scheduling_block(self, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
+    def _scheduling_block(self, jobgroup: JobGroup, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
         if room_trx is None:
             room_trx = workgroup.get_room_trx()
 
-        if self.room_trx.group in SAG_GROUPS_ROOMS and room_trx.dubbingdir:
-            dubbingdir = f"Dubbing Director: {room_trx.dubbingdir}"
-        else:
-            dubbingdir = ""
-
-        if workgroup.is_actors:
-            job_desc = workgroup.personnel[0].job_desc
-            wo = workgroup.wo_num
-            wo_desc = workgroup.personnel[0].wo_desc
-            date = self.format_date(workgroup.personnel[0].wo_begin, fulldate=True)
-        else:
-            job_desc = room_trx.job_desc
-            wo = room_trx.wo
-            wo_desc = room_trx.wo_desc
-            date = self.format_date(room_trx.wo_begin, fulldate=True)
-
-        if room_trx.frontdeskinfo:
-            frontdesk = f"Front Desk Info: <br/>{room_trx.frontdeskinfo}"
-        else:
-            frontdesk = ""
-
-        header_row1 = [job_desc, f"Order No: {wo}", "", wo_desc]
-        header_row2 = [room_trx.company, date, room_trx.phase_desc, frontdesk]
-        header_row3 = [dubbingdir, "", "", ""]
-        header_rows = [
-            DataRow(header_row1, is_wo_header=True),
-            DataRow(header_row2, is_wo_header=True),
-            DataRow(header_row3, is_wo_header=True)
-        ]
-
-        data_rows = []
-        if workgroup.room_only:
-            begin = self.format_date(room_trx.begin)
-            end = self.format_date(room_trx.end)
-            data_rows.append(DataRow(["", f"{begin} - {end}", "", ""]))
-        else:
-            for person in workgroup.personnel:
-                begin = self.format_date(person.begin)
-                end = self.format_date(person.end)
-                datestr = f"{begin} - {end}"
-                desc = f"{person.group}: {person.name}"
-                note = self._parse_html_note(person.note)
-                datarow = DataRow([desc, datestr, "", note], workgroup.is_actors)
-                data_rows.append(datarow)
-
-        for san in workgroup.sans:
-            begin = self.format_date(san.begin)
-            end = self.format_date(san.end)
-            datestr = f"{begin} - {end}"
-            desc = f"{san.group}: {san.name}"
-            datarow = DataRow([desc, datestr, "", ""], is_actor=False)
-            data_rows.append(datarow)
-
-        return WorkOrderBlock(header_rows, data_rows)
-
-    def _operations_block(self, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
-        if room_trx is None:
-            room_trx = workgroup.get_room_trx()
-
-        if room_trx.wo_rep:
-            rep = f"Added by: {room_trx.wo_rep}"
-        else:
-            rep = ""
-
-        if workgroup.is_actors:
-            job_desc = workgroup.personnel[0].job_desc
-            wo = workgroup.wo_num
-            wo_desc = workgroup.personnel[0].wo_desc
-            date = self.format_date(workgroup.personnel[0].wo_begin, fulldate=True)
-        else:
-            job_desc = room_trx.job_desc
-            wo = room_trx.wo
-            wo_desc = room_trx.wo_desc
-            date = self.format_date(room_trx.wo_begin, fulldate=True)
-
-        if room_trx.frontdeskinfo:
-            frontdesk = f"Front Desk Info: <br/>{room_trx.frontdeskinfo}"
-        else:
-            frontdesk = ""
-
-        header_row1 = [job_desc, f"Order No: {wo}", "", wo_desc]
-        header_row2 = [rep, date, room_trx.phase_desc, frontdesk]
-        header_rows = [DataRow(header_row1, is_wo_header=True), DataRow(header_row2, is_wo_header=True)]
-
-        data_rows = []
-        if workgroup.room_only:
-            begin = self.format_date(room_trx.begin)
-            end = self.format_date(room_trx.end)
-            data_rows.append(DataRow(["", f"{begin} - {end}", "", ""]))
-        else:
-            for person in workgroup.personnel:
-                begin = self.format_date(person.begin)
-                end = self.format_date(person.end)
-                datestr = f"{begin} - {end}"
-                desc = f"{person.group}: {person.name}"
-                note = self._parse_html_note(person.note)
-                datarow = DataRow([desc, datestr, "", note], workgroup.is_actors)
-                data_rows.append(datarow)
-
-        for san in workgroup.sans:
-            begin = self.format_date(san.begin)
-            end = self.format_date(san.end)
-            datestr = f"{begin} - {end}"
-            desc = f"{san.group}: {san.name}"
-            datarow = DataRow([desc, datestr, "", ""], is_actor=False)
-            data_rows.append(datarow)
-
-        return WorkOrderBlock(header_rows, data_rows)
-
-    def _it_block(self, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
-        if room_trx is None:
-            room_trx = workgroup.get_room_trx()
-
-        if room_trx.wo_rep:
-            rep = f"Added by: {room_trx.wo_rep}"
+        if jobgroup.project_manager is not None:
+            rep = f"Project Manager: {jobgroup.project_manager}"
         else:
             rep = ""
 
@@ -406,6 +315,142 @@ class RoomGroup:
             data_rows.append(datarow)
 
         return WorkOrderBlock(header_rows, data_rows)
+
+    def _operations_block(self, jobgroup: JobGroup, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
+        if room_trx is None:
+            room_trx = workgroup.get_room_trx()
+
+        if jobgroup.project_manager is not None:
+            rep = f"Project Manager: {jobgroup.project_manager}"
+        else:
+            rep = ""
+
+        if self.room_trx.group in SAG_GROUPS_ROOMS and room_trx.dubbingdir:
+            dubbingdir = f"Dubbing Director: {room_trx.dubbingdir}"
+        else:
+            dubbingdir = ""
+
+        if workgroup.is_actors:
+            job_desc = workgroup.personnel[0].job_desc
+            wo = workgroup.wo_num
+            wo_desc = workgroup.personnel[0].wo_desc
+            date = self.format_date(workgroup.personnel[0].wo_begin, fulldate=True)
+        else:
+            job_desc = room_trx.job_desc
+            wo = room_trx.wo
+            wo_desc = room_trx.wo_desc
+            date = self.format_date(room_trx.wo_begin, fulldate=True)
+
+        if room_trx.frontdeskinfo:
+            frontdesk = f"Front Desk Info: <br/>{room_trx.frontdeskinfo}"
+        else:
+            frontdesk = ""
+
+        header_row1 = [job_desc, f"Order No: {wo}", "", wo_desc]
+        header_row2 = [room_trx.company, date, room_trx.phase_desc, frontdesk]
+        header_row3 = [rep, "", "", ""]
+        header_row4 = [dubbingdir, "", "", ""]
+        header_rows = [
+            DataRow(header_row1, is_wo_header=True),
+            DataRow(header_row2, is_wo_header=True),
+            DataRow(header_row3, is_wo_header=True),
+            DataRow(header_row4, is_wo_header=True)
+        ]
+
+        data_rows = []
+        if workgroup.room_only:
+            begin = self.format_date(room_trx.begin)
+            end = self.format_date(room_trx.end)
+            data_rows.append(DataRow(["", f"{begin} - {end}", "", ""]))
+        else:
+            for person in workgroup.personnel:
+                begin = self.format_date(person.begin)
+                end = self.format_date(person.end)
+                datestr = f"{begin} - {end}"
+                desc = f"{person.group}: {person.name}"
+                note = self._parse_html_note(person.note)
+                datarow = DataRow([desc, datestr, "", note], workgroup.is_actors)
+                data_rows.append(datarow)
+
+        for san in workgroup.sans:
+            begin = self.format_date(san.begin)
+            end = self.format_date(san.end)
+            datestr = f"{begin} - {end}"
+            desc = f"{san.group}: {san.name}"
+            datarow = DataRow([desc, datestr, "", ""], is_actor=False)
+            data_rows.append(datarow)
+
+        return WorkOrderBlock(header_rows, data_rows)
+
+    def _it_block(self, jobgroup: JobGroup, workgroup: WorkorderGroup, room_trx: Transaction | None=None) -> WorkOrderBlock:
+        if room_trx is None:
+            room_trx = workgroup.get_room_trx()
+
+        if jobgroup.project_manager is not None:
+            rep = f"Project Manager: {jobgroup.project_manager}"
+        else:
+            rep = ""
+
+        if self.room_trx.group in SAG_GROUPS_ROOMS and room_trx.dubbingdir:
+            dubbingdir = f"Dubbing Director: {room_trx.dubbingdir}"
+        else:
+            dubbingdir = ""
+
+        if workgroup.is_actors:
+            job_desc = workgroup.personnel[0].job_desc
+            wo = workgroup.wo_num
+            wo_desc = workgroup.personnel[0].wo_desc
+            date = self.format_date(workgroup.personnel[0].wo_begin, fulldate=True)
+        else:
+            job_desc = room_trx.job_desc
+            wo = room_trx.wo
+            wo_desc = room_trx.wo_desc
+            date = self.format_date(room_trx.wo_begin, fulldate=True)
+
+        if room_trx.frontdeskinfo:
+            frontdesk = f"Front Desk Info: <br/>{room_trx.frontdeskinfo}"
+        else:
+            frontdesk = ""
+
+        header_row1 = [job_desc, f"Order No: {wo}", "", wo_desc]
+        header_row2 = [room_trx.company, date, room_trx.phase_desc, frontdesk]
+        header_row3 = [rep, "", "", ""]
+        header_row4 = [dubbingdir, "", "", ""]
+        header_rows = [
+            DataRow(header_row1, is_wo_header=True),
+            DataRow(header_row2, is_wo_header=True),
+            DataRow(header_row3, is_wo_header=True),
+            DataRow(header_row4, is_wo_header=True)
+        ]
+
+        data_rows = []
+        if workgroup.room_only:
+            begin = self.format_date(room_trx.begin)
+            end = self.format_date(room_trx.end)
+            data_rows.append(DataRow(["", f"{begin} - {end}", "", ""]))
+        else:
+            for person in workgroup.personnel:
+                begin = self.format_date(person.begin)
+                end = self.format_date(person.end)
+                datestr = f"{begin} - {end}"
+                desc = f"{person.group}: {person.name}"
+                note = self._parse_html_note(person.note)
+                datarow = DataRow([desc, datestr, "", note], workgroup.is_actors)
+                data_rows.append(datarow)
+
+        for san in workgroup.sans:
+            begin = self.format_date(san.begin)
+            end = self.format_date(san.end)
+            datestr = f"{begin} - {end}"
+            desc = f"{san.group}: {san.name}"
+            datarow = DataRow([desc, datestr, "", ""], is_actor=False)
+            data_rows.append(datarow)
+
+        return WorkOrderBlock(header_rows, data_rows)
+
+    def pull_project_managers(self) -> None:
+        for jobgroup in self.jobgroups:
+            jobgroup.pull_project_manager()
     
     def add_roster_time_offs(self, roster_time_offs: list["RosterTimeOff"]) -> None:
         self._roster_time_offs += roster_time_offs
@@ -420,14 +465,14 @@ class RoomGroup:
                 if (workgroup.room_trx is None or
                     workgroup.room_trx.name != self.room_trx.name):
                     continue
-                blocks.append(block_method(workgroup))
+                blocks.append(block_method(jobgroup, workgroup))
             if self.room_trx.group in SAG_GROUPS_ROOMS:
                 for actorgroup in jobgroup.actorgroups:
                     if self.room_trx.name.lower().startswith("adr"):
                         wo_desc = actorgroup.personnel[0].wo_desc
                         if not self._is_adr_match(self.room_trx.name, wo_desc):
                             continue
-                    blocks.append(self._scheduling_block(actorgroup, self.room_trx))
+                    blocks.append(block_method(jobgroup, actorgroup, self.room_trx))
         blocks.extend(self.roster_time_off_blocks(self._roster_time_offs))
         blocks.sort()
         return self._remove_duplicates(blocks)

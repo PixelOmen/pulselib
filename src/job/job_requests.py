@@ -39,10 +39,14 @@ def get(job_num: str) -> dict:
     return body
 
 def get_project_manager_desc(sale_office_no: str) -> str:
-    url = f"{CONFIG.SALES_OFFICE_URL}/sale_office_no={sale_office_no}"
+    url = f'{CONFIG.SALES_OFFICE_URL}'
     r = requests.get(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD))
     body = json.loads(utils.verify_response(url=url, response=r))
-    err = body.get("error")
-    if err:
+    if not isinstance(body, list):
+        err = body.get("error")
         raise JobUncaughtError(sale_office_no, err)
-    return body["sale_office_desc"]
+    for item in body:
+        if item["sale_office_no"] == sale_office_no:
+            pm_desc = item["sale_office_desc"]
+            return pm_desc
+    raise JobUncaughtError(sale_office_no, "No sales office description found matching: " + sale_office_no)

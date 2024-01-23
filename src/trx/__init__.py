@@ -8,7 +8,7 @@ class Transaction:
     name: str
     job: str
     wo: str
-    wo_rep: str
+    added_by: str
     job_desc: str
     wo_desc: str
     wo_type: str
@@ -47,7 +47,7 @@ class Transaction:
                 name=d["resource_desc"],
                 job=d["wo_job_no"]["wo_job_no"],
                 wo=d["wo_no_seq"]["wo_no_seq"],
-                wo_rep=d["user_added"]["full_name"],
+                added_by=d["user_added"]["full_name"],
                 job_desc=d["job_desc"],
                 wo_desc=d["wo_desc"],
                 wo_type=d["wo_type_no"]["wo_type_desc"],
