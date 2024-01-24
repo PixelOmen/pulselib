@@ -45,15 +45,15 @@ class SessionUncaughtError(Exception):
 
 class ResourceUncaughtError(Exception):
     def __init__(self, res_no: str | dict, err: str):
-        super().__init__(f"asset_requests: Uncaught error - {res_no} - {err}")
+        super().__init__(f"resource_requests: Uncaught error - {res_no} - {err}")
 
 class ResourceExistsError(Exception):
     def __init__(self, res_no: str | dict, err: str):
-        super().__init__(f"asset_requests: Asset exists - {res_no} - {err}")
+        super().__init__(f"resource_requests: Resource exists - {res_no} - {err}")
 
 class ResourceNotFoundError(Exception):
     def __init__(self, res_no: str):
-        super().__init__(f"asset_requests: Asset not found: {res_no}")
+        super().__init__(f"resource_requests: Resource not found: {res_no}")
 
 
 class TRXUncaughtError(Exception):

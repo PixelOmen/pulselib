@@ -18,16 +18,16 @@ def query(query: dict) -> list[dict]:
             raise ResourceUncaughtError(debugdict, err)
     return body
 
-def get(assetno: str) -> dict:
-    url = f"{CONFIG.RESOURCE_URL}/resource_code={str(assetno)}"
+def get(resource_code: str) -> dict:
+    url = f"{CONFIG.RESOURCE_URL}/resource_code={(str(resource_code))}"
     r = requests.get(url=url, auth=(CONFIG.USERNAME, CONFIG.PASSWORD))
     body = json.loads(utils.verify_response(url=url, response=r))
     err = body.get("error")
     if err:
         if err.startswith("Alternate key not found:"):
-            raise ResourceNotFoundError(assetno)
+            raise ResourceNotFoundError(resource_code)
         else:
-            raise ResourceUncaughtError(assetno, err)
+            raise ResourceUncaughtError(resource_code, err)
     return body
 
 def patch(resource_code: str, patchlist: list[dict]) -> None:

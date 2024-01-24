@@ -1,6 +1,10 @@
+from typing import Union
 from dataclasses import dataclass
 
 from ..errors import TRXUncaughtError
+from ..resource.model import Resource
+from ..resource import resource_requests
+
 
 @dataclass()
 class Transaction:
@@ -23,9 +27,6 @@ class Transaction:
     frontdeskinfo: str
     phase_code: str
     phase_desc: str
-
-    def __str__(self) -> str:
-        return f"{self.name} - Job:{self.job} - WO:{self.wo} - ({self.begin} - {self.end})"
 
     @classmethod
     def from_dict(cls, d: dict) -> "Transaction":
@@ -66,6 +67,16 @@ class Transaction:
         except Exception as e:
             raise TRXUncaughtError(d) from e
         return obj
+    
+    def get_resource(self) -> Union["Resource", None]:
+        results = resource_requests.query({"resource_desc": self.name})
+        if results:
+            return Resource(results[0])
+        else:
+            return None
+        
+    def __str__(self) -> str:
+        return f"{self.name} - Job:{self.job} - WO:{self.wo} - ({self.begin} - {self.end})"
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Transaction):
@@ -79,7 +90,7 @@ class Transaction:
     def __hash__(self) -> int:
         return hash(id(self))
     
-class Resource:
+class TransactionGroup:
     def __init__(self, name: str, trxlist: list["Transaction"]):
         if not trxlist:
             raise ValueError(f"Resource initialized with empty trxlist: {name}")
@@ -97,14 +108,14 @@ class Resource:
     def get_job(self) -> str:
         return self.trxlist[0].job
         
-class Personnel(Resource):
+class Personnel(TransactionGroup):
     def __init__(self, name: str, trxlist: list["Transaction"]):
         super().__init__(name, trxlist)
 
-class Room(Resource):
+class Room(TransactionGroup):
     def __init__(self, name: str, trxlist: list["Transaction"]):
         super().__init__(name, trxlist)
 
-class SAN(Resource):
+class SAN(TransactionGroup):
     def __init__(self, name: str, trxlist: list["Transaction"]):
         super().__init__(name, trxlist)

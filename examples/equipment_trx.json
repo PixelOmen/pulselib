@@ -1,0 +1,42 @@
+{
+    "WO_field_2": null,
+    "customer_name": "CG Drama Project Holdings Limited",
+    "group_desc": "X300 Monitors",
+    "jm_rate_detail": [],
+    "job_desc": "The Lamb - DI ",
+    "job_table1_no": null,
+    "note_no_text": null,
+    "phase_code": {
+        "external_key": null,
+        "phase_code": "Conf",
+        "phase_desc": "Confirmed"
+    },
+    "resource_desc": "X300-004",
+    "row_display": null,
+    "trx_begin_dt": "2024-01-24T10:00:00",
+    "trx_end_dt": "2024-01-24T18:00:00",
+    "user_added": {
+        "external_key": null,
+        "full_name": "Jhoseline Villacorta Medrano",
+        "list_id": "113",
+        "long_user_id": "JVILLACORTA",
+        "user_added": "JVILLACORT",
+        "user_id": "JVILLACORT"
+    },
+    "wo_begin_dt": "2024-01-24T10:00:00",
+    "wo_desc": "SDR ",
+    "wo_job_no": {
+        "external_key": null,
+        "job_no": 3190,
+        "wo_job_no": 3190
+    },
+    "wo_no_seq": {
+        "external_key": null,
+        "wo_no_seq": "33543-1"
+    },
+    "wo_type_no": {
+        "external_key": null,
+        "wo_type_desc": "Color Grading",
+        "wo_type_no": 2
+    }
+}

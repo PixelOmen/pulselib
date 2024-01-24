@@ -4,37 +4,47 @@ from typing import TYPE_CHECKING, Any
 from dataclasses import dataclass, field
 
 from . import resource_requests
-from .resourcefiledmaps import LINGUIST_MAPS, LINGUIST_TEMPLATE
+from .resourcefiledmaps import RESOURCE_MAPS, LINGUIST_TEMPLATE
 
 if TYPE_CHECKING:
     from .resourcefiledmaps import SimpleFieldMap
 
-@dataclass
 class Resource:
-    pass
+    def __init__(self, jdict: dict[str, Any]):
+        self.fieldmaps: dict[str, "SimpleFieldMap"] = RESOURCE_MAPS
+        self.jdict = jdict
+        self.type = ""
+        self._parse_data()
 
-@dataclass
+    def _parse_data(self):
+        if not self.jdict:
+            return
+        self.type = self.fieldmaps["type"].read(self.jdict)
+
+
+
 class Linguist(Resource):
-    name: str
-    email: str
-    transrate: str
-    qcrate: str
-    notes: str
-    feedback: str
-    location: str
-    languages: list[str] = field(default_factory=list)
-    phone: str = field(init=False)
-    code: str = field(init=False)
-    fieldmaps: dict[str, "SimpleFieldMap"] = field(init=False)
+    def __init__(self, jdict: dict[str, Any]):
+        super().__init__(jdict)
+        self._parse_linguist_data()
+        self._set_code()
+        self._set_email_phone()
 
-    def __post_init__(self):
-        self.name = self._cleanup_name(self.name)
+    def _parse_linguist_data(self):
+        self.name = self._cleanup_name(self.jdict["name"])
+        self.email = self.jdict["email"]
+        self.transrate = self.jdict["transrate"]
+        self.qcrate = self.jdict["qcrate"]
+        self.notes = self.jdict["notes"]
+        self.feedback = self.jdict["feedback"]
+        self.location = self.jdict["location"]
+        languages = self.jdict["languages"]
+        self.languages = languages if languages is not None else []
         self.phone = ""
-        self.fieldmaps = LINGUIST_MAPS
+        self.code = ""
+        # limits qcrate and transrate to 127 characters and strips whitespace
         self.qcrate = self.qcrate.strip()[:127]
         self.transrate = self.transrate.strip()[:127]
-        self._set_code()
-        self._cleanup_email()
 
     def _cleanup_name(self, name: str) -> str:
         name = name.strip()
@@ -75,7 +85,7 @@ class Linguist(Resource):
         else:
             self.code = self.code[:8]
 
-    def _cleanup_email(self):
+    def _set_email_phone(self):
         stripped_text = self.email.strip()
         email_pattern = re.compile(r'[\w\.-]+@[\w\.-]+')
         phone_pattern = re.compile(r'(?<!\d)(\+\d{1,2}\s?)?1?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}(?![a-zA-Z0-9@])')

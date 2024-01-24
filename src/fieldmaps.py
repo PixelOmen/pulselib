@@ -19,16 +19,16 @@ class FieldTypeEnum:
         return ""
 
 class SimpleFieldMap:
-    def __init__(self, name: str, ftype: int, keys: Any, nestedcheckmark: bool=False, enumdict: dict[str, int]=...) -> None:
+    def __init__(self, name: str, ftype: int, keys: Any, nestedcheckmark: bool=False, enumdict: dict[str, int] | None = None) -> None:
         if 0 > ftype > 4:
             raise ValueError(f"SimpleFieldMap: invalid ftype: {ftype}")
-        if ftype == FieldTypeEnum.MPULSE_ENUM and enumdict is ...:
+        if ftype == FieldTypeEnum.MPULSE_ENUM and enumdict is None:
             raise ValueError(f"SimpleFieldMap: BUILTIN_ENUM requires a enumdict")
         self.name = name
         self.ftype = ftype
         self.keys = keys
         self.nestedcheckmark = nestedcheckmark
-        self.enumdict = enumdict if enumdict is not ... else {}
+        self.enumdict = enumdict if enumdict is not None else {}
 
     def read(self, jdict: dict[str, Any]) -> Any:
         match self.ftype:
@@ -94,8 +94,8 @@ class SimpleFieldMap:
             return True if lastresult == "Y" else False
         return lastresult
     
-    def _patch_single(self, value: Any, writekey: str=...) -> dict[str, Any]:
-        key = writekey if writekey is not ... else self.keys
+    def _patch_single(self, value: Any, writekey: str | None = None) -> dict[str, Any]:
+        key = writekey if writekey is not None else self.keys
         if not isinstance(key, str):
             raise ValueError(f"SimpleFieldMap key must be a string: {key}")
         return {
@@ -109,8 +109,8 @@ class SimpleFieldMap:
             raise ValueError(f"SimpleFieldMap - {self.name} - enum value not in enumdict: {value}")
         return self._patch_single(self.enumdict[value], self.keys[0])
 
-    def _jdict_single(self, value: Any, writekey: str=...) -> dict[str, Any]:
-        key = writekey if writekey is not ... else self.keys
+    def _jdict_single(self, value: Any, writekey: str | None = None) -> dict[str, Any]:
+        key = writekey if writekey is not None else self.keys
         if not isinstance(key, str):
             raise ValueError(f"SimpleFieldMap key must be a string: {key}")
         return {key: value}
