@@ -5,7 +5,7 @@ from typing import TypeVar, TYPE_CHECKING, Union
 
 from . import ReportEnum
 from ..job import job_requests
-from ..trx import Transaction, Personnel, Room, SAN
+from ..trx import Transaction, Personnel, Room, SAN, Equipment
 from .. import PERSONNEL_GROUPS, ROOM_GROUPS, SAN_GROUPS, SAG_GROUPS, SAG_GROUPS_ROOMS
 
 if TYPE_CHECKING:
@@ -85,6 +85,7 @@ class WorkorderGroup:
     wo_num: str
     personnel: list[Transaction]
     sans: list[Transaction]
+    equipment: list[Transaction]
     room_trx: Transaction | None = None
     is_actors: bool = False
     room_only: bool = field(init=False)
@@ -124,6 +125,7 @@ class JobGroup:
                     wo_num=wo,
                     personnel=trxs,
                     sans=[],
+                    equipment=[],
                     room_trx=None,
                     is_actors=True
                 )
@@ -290,6 +292,8 @@ class RoomGroup:
             DataRow(header_row3, is_wo_header=True),
             DataRow(header_row4, is_wo_header=True)
         ]
+        if dubbingdir:
+            header_rows.append(DataRow(["", "", "", ""], is_wo_header=True))
 
         data_rows = []
         if workgroup.room_only:
@@ -311,6 +315,14 @@ class RoomGroup:
             end = self.format_date(san.end)
             datestr = f"{begin} - {end}"
             desc = f"{san.group}: {san.name}"
+            datarow = DataRow([desc, datestr, "", ""], is_actor=False)
+            data_rows.append(datarow)
+
+        for equip in workgroup.equipment:
+            begin = self.format_date(equip.begin)
+            end = self.format_date(equip.end)
+            datestr = f"{begin} - {end}"
+            desc = f"{equip.group}: {equip.name}"
             datarow = DataRow([desc, datestr, "", ""], is_actor=False)
             data_rows.append(datarow)
 
@@ -356,6 +368,8 @@ class RoomGroup:
             DataRow(header_row3, is_wo_header=True),
             DataRow(header_row4, is_wo_header=True)
         ]
+        if dubbingdir:
+            header_rows.append(DataRow(["", "", "", ""], is_wo_header=True))
 
         data_rows = []
         if workgroup.room_only:
@@ -377,6 +391,14 @@ class RoomGroup:
             end = self.format_date(san.end)
             datestr = f"{begin} - {end}"
             desc = f"{san.group}: {san.name}"
+            datarow = DataRow([desc, datestr, "", ""], is_actor=False)
+            data_rows.append(datarow)
+
+        for equip in workgroup.equipment:
+            begin = self.format_date(equip.begin)
+            end = self.format_date(equip.end)
+            datestr = f"{begin} - {end}"
+            desc = f"{equip.group}: {equip.name}"
             datarow = DataRow([desc, datestr, "", ""], is_actor=False)
             data_rows.append(datarow)
 
@@ -422,6 +444,8 @@ class RoomGroup:
             DataRow(header_row3, is_wo_header=True),
             DataRow(header_row4, is_wo_header=True)
         ]
+        if dubbingdir:
+            header_rows.append(DataRow(["", "", "", ""], is_wo_header=True))
 
         data_rows = []
         if workgroup.room_only:
@@ -443,6 +467,14 @@ class RoomGroup:
             end = self.format_date(san.end)
             datestr = f"{begin} - {end}"
             desc = f"{san.group}: {san.name}"
+            datarow = DataRow([desc, datestr, "", ""], is_actor=False)
+            data_rows.append(datarow)
+
+        for equip in workgroup.equipment:
+            begin = self.format_date(equip.begin)
+            end = self.format_date(equip.end)
+            datestr = f"{begin} - {end}"
+            desc = f"{equip.group}: {equip.name}"
             datarow = DataRow([desc, datestr, "", ""], is_actor=False)
             data_rows.append(datarow)
 
@@ -506,8 +538,23 @@ class ResourceGroups:
         self.sag_actors: list[Personnel] = []
         self.rooms: list[Room] = []
         self.sans: list[SAN] = []
+        self.equipment: list[Equipment] = []
         self.other: dict[str, list[Transaction]] = {}
         self._split_into_groups()
+
+    # def _filter_equipment(self) -> tuple[list[Transaction], list[Transaction]]:
+    #     equipment: list[Transaction] = []
+    #     non_equipment: list[Transaction] = []
+    #     for trx in self.trxlist:
+    #         resource = trx.get_resource()
+    #         if resource is None:
+    #             raise ValueError(f"Transaction does not have a resource: {trx.name}")
+    #         if resource.type.lower() == "equipment":
+    #             equipment.append(trx)
+    #         else:
+    #             non_equipment.append(trx)
+    #     return equipment, non_equipment
+
 
     def _split_into_groups(self) -> None:
         # temp dicts to avoid multiple objects with same name
@@ -515,8 +562,16 @@ class ResourceGroups:
         actors: dict[str, list[Transaction]] = {}
         rooms: dict[str, list[Transaction]] = {}
         sans: dict[str, list[Transaction]] = {}
+        equipment: dict[str, list[Transaction]] = {}
 
         for trx in self.trxlist:
+            resource = trx.get_resource()
+            if resource is None:
+                raise ValueError(f"Transaction does not have a resource: {trx.name}")
+            if resource.type.lower() == "equipment":
+                equipment.setdefault(trx.name, []).append(trx)
+                continue
+
             if trx.group in CALLSHEET_PERSONNEL:
                 personnel.setdefault(trx.name, []).append(trx)
             elif trx.group in SAG_GROUPS:
@@ -532,6 +587,17 @@ class ResourceGroups:
         self.sag_actors = [Personnel(name, trxlist) for name, trxlist in actors.items()]
         self.rooms = [Room(name, trxlist) for name, trxlist in rooms.items()]
         self.sans = [SAN(name, trxlist) for name, trxlist in sans.items()]
+        self.equipment = [Equipment(name, trxlist) for name, trxlist in equipment.items()]
+
+    def _search_equipment(self, wo_or_job: str, byjob:bool = False) -> list[Transaction]:
+        equipment: list[Transaction] = []
+        for equip in self.equipment:
+            for trx in equip.trxlist:
+                if byjob and trx.job == wo_or_job:
+                    equipment.append(trx)
+                elif not byjob and trx.wo == wo_or_job:
+                    equipment.append(trx)
+        return equipment
 
     def _search_sans(self, wo_or_job: str, byjob:bool = False) -> list[Transaction]:
         sans: list[Transaction] = []
@@ -563,7 +629,8 @@ class ResourceGroups:
                 job_desc = room_trx.job_desc
                 sans = self._search_sans(wo)
                 personnel = self._search_personnel(wo)
-                jobdict.setdefault((job_info, job_desc), []).append(WorkorderGroup(wo, personnel, sans, room_trx))
+                equipment = self._search_equipment(wo)
+                jobdict.setdefault((job_info, job_desc), []).append(WorkorderGroup(wo, personnel, sans, equipment, room_trx))
 
         joblist: list[JobGroup] = []
         for job_info, workorders in jobdict.items():

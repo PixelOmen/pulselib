@@ -119,3 +119,7 @@ class Room(TransactionGroup):
 class SAN(TransactionGroup):
     def __init__(self, name: str, trxlist: list["Transaction"]):
         super().__init__(name, trxlist)
+
+class Equipment(TransactionGroup):
+    def __init__(self, name: str, trxlist: list["Transaction"]):
+        super().__init__(name, trxlist)
