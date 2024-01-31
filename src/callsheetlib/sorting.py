@@ -231,6 +231,13 @@ class RoomGroup:
             desc_room = match.group(0)
             if desc_room == room or desc_room == formatted_room:
                 return True
+
+        match = re.search(room, desc, re.IGNORECASE)
+        if match:
+            desc_room = match.group(0)
+            if desc_room.lower().strip() == room.lower().strip():
+                return True
+        
         return False
     
     def _personnel_table_rows(self, workgroup: WorkorderGroup) -> list[list[str]]:
