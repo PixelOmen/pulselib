@@ -51,6 +51,7 @@ class WorkOrderBlock:
     header_rows: list[DataRow]
     data_rows: list[DataRow]
     is_actors: bool = False
+    is_maintenance: bool = False
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, WorkOrderBlock):
@@ -60,7 +61,9 @@ class WorkOrderBlock:
     
     def __lt__(self, other: "WorkOrderBlock") -> bool:
         if isinstance(other, WorkOrderBlock):
-            return self.header_rows[1] < other.header_rows[1]
+            row_a = 0 if self.is_maintenance else 1
+            row_b = 0 if other.is_maintenance else 1
+            return self.header_rows[row_a] < other.header_rows[row_b]
         raise TypeError(f"Cannot compare WorkOrderBlock to {type(other)}")
 
 class TopLevelBlock:
@@ -160,13 +163,13 @@ class RoomGroup:
         if not roster_time_offs:
             return blocks
         for timeoff in roster_time_offs:
-            header_row1 = ["Maintenance",  RoomGroup.format_date(timeoff.start, fulldate=True), ""]
+            header_row1 = ["Maintenance",  RoomGroup.format_date(timeoff.start, fulldate=True), "", ""]
             header_rows = [DataRow(header_row1, is_wo_header=True)]
             begin = RoomGroup.format_date(timeoff.start)
             end = RoomGroup.format_date(timeoff.end)
             datestr = f"{begin} - {end}"
             datarow = DataRow(["", datestr, "", ""], is_actor=False)
-            blocks.append(WorkOrderBlock(header_rows, [datarow]))
+            blocks.append(WorkOrderBlock(header_rows, [datarow], is_maintenance=True))
         return blocks
     
     def __init__(self, room_trx: Transaction, jobgroups: list[JobGroup],
