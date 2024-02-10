@@ -20,6 +20,8 @@ class Resource:
         if not self.jdict:
             return
         self.type = self.fieldmaps["type"].read(self.jdict)
+        if self.type is None:
+            self.type = ""
 
 
 
