@@ -77,6 +77,7 @@ PERSONNEL_GROUPS = [
 
 ROOM_GROUPS = [
     "Audio Stages",
+    "Audio Edit Rooms",
     "Dub QC Rooms",
     "Dub Edit Rooms",
     "QC Rooms (per hour)",
