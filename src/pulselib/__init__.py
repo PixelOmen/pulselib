@@ -1,8 +1,12 @@
 from pathlib import Path
 from dataclasses import dataclass
 
+from dotenv import load_dotenv
+
 PDFDIR = Path(__file__).parent.parent / "pdfdir"
 DEFAULT_PDFPATH = PDFDIR / "callsheet.pdf"
+
+load_dotenv()
 
 @dataclass
 class PhaseCode:

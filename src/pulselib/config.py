@@ -1,9 +1,10 @@
+import os
 from dataclasses import dataclass
 
 @dataclass
 class Config:
-    USERNAME: str = "xytech"
-    PASSWORD: str = "Password1"
+    USERNAME: str = ""
+    PASSWORD: str = ""
     MI_DEBUG: bool = False
     MI_DEBUG_PORT: str = "4020"
     MI_LIVE_PORT: str = "80"
@@ -30,6 +31,16 @@ class Config:
     SALES_OFFICE_URL: str = "http://xytechapp01:PORT/api/v1/database/DATABASE/JmSalesOffice"
 
     def __post_init__(self) -> None:
+        user = os.getenv('MP_USERNAME')
+        if user is not None:
+            self.USERNAME = user
+        else:
+            raise ValueError("MP_USERNAME environment variable not set")
+        pwd = os.getenv('MP_PASSWORD')
+        if pwd is not None:
+            self.PASSWORD = pwd
+        else:
+            raise ValueError("MP_PASSWORD environment variable not set")
         mp_port = self.MP_DEBUG_INFO[0] if self.MP_DEBUG else self.MP_LIVE_INFO[0]
         mp_db = self.MP_DEBUG_INFO[1] if self.MP_DEBUG else self.MP_LIVE_INFO[1]
         mi_port = self.MI_DEBUG_PORT if self.MI_DEBUG else self.MI_LIVE_PORT
